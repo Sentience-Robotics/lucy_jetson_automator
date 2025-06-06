@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  role_name: isaac-ros-platform
+  author: Charles Madjeri
+  description: Isaac ROS platform setup including ROS 2 Humble and Isaac ROS dependencies
+  company: Sentience Robotics
+  license: MIT
+  min_ansible_version: 2.9
+  platforms:
+    - name: Ubuntu
+      versions:
+        - "22.04"
+  galaxy_tags:
+    - isaac
+    - ros
+    - robotics
+    - nvidia
+
+dependencies:
+  - role: system-foundation
+  - role: container-platform 

@@ -1,0 +1,9 @@
+ansible
+ansible-core
+paramiko
+cryptography
+pyyaml
+jinja2
+netaddr
+requests
+urllib3 

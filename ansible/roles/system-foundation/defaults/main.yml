@@ -1,0 +1,36 @@
+---
+# System Foundation defaults
+
+# Package management settings
+apt_update_cache: true
+apt_cache_valid_time: 3600
+apt_upgrade: true
+upgrade_type: "dist"  # Options: safe, full, dist
+autoremove: true
+autoclean: true
+
+# Retry configuration for apt operations
+apt_retry_count: 5
+apt_retry_delay: 15
+
+# Essential system packages
+essential_packages:
+  - curl
+  - wget
+  - vim
+  - htop
+  - git
+  - unzip
+  - software-properties-common
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+  - lsb-release
+
+# Display settings
+display_system_info: true
+display_package_results: true
+
+# Reboot handling
+check_reboot_required: true
+auto_reboot: false  # Set to true to automatically reboot if required 

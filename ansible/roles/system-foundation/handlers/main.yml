@@ -1,0 +1,12 @@
+---
+# System Foundation Handlers
+
+- name: check_reboot_required
+  stat:
+    path: /var/run/reboot-required
+  register: reboot_required
+  
+- name: notify_reboot_required
+  debug:
+    msg: "⚠️  System reboot required to complete updates. Please reboot when convenient."
+  when: reboot_required.stat.exists 

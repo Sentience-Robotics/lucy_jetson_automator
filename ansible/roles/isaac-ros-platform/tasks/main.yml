@@ -1,0 +1,94 @@
+---
+# Isaac ROS Platform Setup Tasks
+
+- name: Display Isaac ROS platform information
+  debug:
+    msg:
+      - "🤖 Starting Isaac ROS Platform Setup"
+      - "🖥️  Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "⚠️  Isaac ROS setup: {{ 'Enabled' if setup_isaac_ros | default(false) else 'Disabled (optional)' }}"
+  when: display_isaac_info | default(true)
+  tags: [isaac, ros]
+
+- name: Isaac ROS setup block
+  block:
+    - name: Add ROS 2 Humble repository key
+      apt_key:
+        url: https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc
+        state: present
+      become: true
+      tags: [isaac, ros, repository]
+
+    - name: Add ROS 2 Humble repository
+      apt_repository:
+        repo: "deb http://packages.ros.org/ros2/ubuntu {{ ansible_distribution_release }} main"
+        state: present
+      become: true
+      tags: [isaac, ros, repository]
+
+    - name: Update package cache after adding ROS repository
+      apt:
+        update_cache: true
+      become: true
+      tags: [isaac, ros]
+
+    - name: Install ROS 2 Humble base packages
+      apt:
+        name: "{{ ros_packages }}"
+        state: present
+      become: true
+      tags: [isaac, ros, packages]
+
+    - name: Install Isaac ROS dependencies
+      apt:
+        name: "{{ isaac_dependencies }}"
+        state: present
+      become: true
+      tags: [isaac, ros, dependencies]
+
+    - name: Create ROS workspace directory
+      file:
+        path: "{{ ros_workspace_path }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+      become: true
+      tags: [isaac, ros, workspace]
+
+    - name: Initialize rosdep (if not already done)
+      shell: |
+        if [ ! -d /etc/ros/rosdep ]; then
+          rosdep init
+        fi
+      become: true
+      register: rosdep_init
+      failed_when: false
+      changed_when: "'already initialized' not in rosdep_init.stderr"
+      tags: [isaac, ros, rosdep]
+
+    - name: Update rosdep
+      shell: rosdep update
+      become_user: "{{ ansible_user }}"
+      tags: [isaac, ros, rosdep]
+
+    - name: Isaac ROS setup summary
+      debug:
+        msg:
+          - "🎯 Isaac ROS Platform Setup Complete!"
+          - "🤖 ROS 2 Humble: Installed"
+          - "📁 Workspace: {{ ros_workspace_path }}"
+          - "🔧 Dependencies: Installed"
+          - "✅ Ready for Isaac ROS development"
+      tags: [isaac, ros]
+
+  when: setup_isaac_ros | default(false)
+
+- name: Isaac ROS skipped notification
+  debug:
+    msg:
+      - "ℹ️  Isaac ROS Platform Setup: SKIPPED"
+      - "🤖 To enable: Set setup_isaac_ros: true in configuration"
+      - "📝 This is optional for basic Jetson setup"
+  when: not (setup_isaac_ros | default(false))
+  tags: [isaac, ros] 

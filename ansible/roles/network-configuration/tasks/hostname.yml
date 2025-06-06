@@ -1,0 +1,57 @@
+---
+# Hostname Configuration Tasks
+
+- name: Get current hostname
+  command: hostname
+  register: current_hostname
+  changed_when: false
+  tags: [network, hostname]
+
+- name: Display current hostname
+  debug:
+    msg: "🏠 Current hostname: {{ current_hostname.stdout }}"
+  tags: [network, hostname]
+
+- name: Check if hostname change is needed
+  set_fact:
+    hostname_needs_change: "{{ current_hostname.stdout != hostname_config.jetson_hostname }}"
+  tags: [network, hostname]
+
+- name: Configure system hostname
+  block:
+    - name: Set system hostname
+      hostname:
+        name: "{{ hostname_config.jetson_hostname }}"
+      become: true
+      register: hostname_result
+      tags: [network, hostname, system]
+
+    - name: Update /etc/hosts file
+      lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1'
+        line: "127.0.1.1 {{ hostname_config.jetson_hostname }}"
+        backup: true
+      become: true
+      when: hostname_config.update_hosts_file | default(true)
+      tags: [network, hostname, system]
+
+    - name: Restart systemd-hostnamed service
+      systemd:
+        name: systemd-hostnamed
+        state: restarted
+      become: true
+      tags: [network, hostname, system]
+
+    - name: Display hostname configuration result
+      debug:
+        msg: "✅ Hostname successfully changed from '{{ current_hostname.stdout }}' to '{{ hostname_config.jetson_hostname }}'"
+      tags: [network, hostname]
+
+  when: hostname_needs_change | bool
+
+- name: Display hostname status (no change needed)
+  debug:
+    msg: "✅ Hostname already set to '{{ hostname_config.jetson_hostname }}' - no change needed"
+  when: not (hostname_needs_change | bool)
+  tags: [network, hostname] 

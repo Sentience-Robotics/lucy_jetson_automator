@@ -1,0 +1,31 @@
+---
+# User Environment defaults
+
+# Shell configuration
+shell_config:
+  install_zsh: true
+  install_oh_my_zsh: true
+  set_default_shell: true
+  configure_aliases: true
+
+# Development tools configuration
+dev_config:
+  install_tools: true
+
+# Development tools to install
+dev_tools:
+  - git
+  - vim
+  - nano
+  - htop
+  - tree
+  - tmux
+  - curl
+  - wget
+  - unzip
+  - zip
+  - build-essential
+  - python3-pip
+
+# Display settings
+display_user_info: true 

@@ -1,0 +1,145 @@
+---
+# Wi-Fi Configuration Tasks
+
+- name: Validate Wi-Fi credentials
+  block:
+    - name: Check if Wi-Fi SSID is provided
+      fail:
+        msg: "WIFI_SSID environment variable is required for Wi-Fi configuration"
+      when: wifi_config.ssid is not defined or wifi_config.ssid == ""
+
+    - name: Check if Wi-Fi password is provided
+      fail:
+        msg: "WIFI_PASSWORD environment variable is required for Wi-Fi configuration"
+      when: wifi_config.password is not defined or wifi_config.password == ""
+  tags: [network, wifi, validation]
+
+- name: Install and configure NetworkManager
+  block:
+    - name: Install NetworkManager if not present
+      apt:
+        name: network-manager
+        state: present
+        update_cache: false  # Cache updated in system-foundation
+      become: true
+      retries: "{{ network_retry_count }}"
+      delay: "{{ network_retry_delay }}"
+      when: network_manager.install_if_missing | default(true)
+
+    - name: Ensure NetworkManager service is running
+      systemd:
+        name: NetworkManager
+        state: started
+        enabled: yes
+      become: true
+      when: network_manager.ensure_running | default(true)
+  tags: [network, wifi, networkmanager]
+
+- name: Detect and validate Wi-Fi interface
+  block:
+    - name: Check if Wi-Fi interface exists
+      shell: nmcli device status | grep wifi | head -1 | awk '{print $1}'
+      register: wifi_interface
+      changed_when: false
+      failed_when: false
+
+    - name: Display Wi-Fi interface information
+      debug:
+        msg: 
+          - "📶 Wi-Fi interface found: {{ wifi_interface.stdout }}"
+          - "🌐 Configuring connection to SSID: {{ wifi_config.ssid }}"
+      when: wifi_interface.stdout != ""
+
+    - name: Fail if no Wi-Fi interface found
+      fail:
+        msg: "No Wi-Fi interface found on this device. Ensure Wi-Fi hardware is available."
+      when: wifi_interface.stdout == ""
+  tags: [network, wifi, detection]
+
+- name: Check existing Wi-Fi connection status
+  block:
+    - name: Check if Wi-Fi connection already exists
+      shell: nmcli connection show "{{ wifi_config.ssid }}"
+      register: existing_connection
+      changed_when: false
+      failed_when: false
+
+    - name: Check if Wi-Fi connection is currently active
+      shell: nmcli connection show --active "{{ wifi_config.ssid }}"
+      register: active_connection
+      changed_when: false
+      failed_when: false
+      when: existing_connection.rc == 0
+
+    - name: Check if Wi-Fi interface is connected to the target SSID
+      shell: nmcli device wifi list | grep "{{ wifi_config.ssid }}" | grep "*"
+      register: connected_to_target
+      changed_when: false
+      failed_when: false
+
+    - name: Display current Wi-Fi connection status
+      debug:
+        msg:
+          - "📊 Wi-Fi Connection Status:"
+          - "📋 Connection exists: {{ 'Yes' if existing_connection.rc == 0 else 'No' }}"
+          - "🔛 Connection active: {{ 'Yes' if (existing_connection.rc == 0 and active_connection.rc == 0) else 'No' }}"
+          - "📶 Connected to target SSID: {{ 'Yes' if connected_to_target.rc == 0 else 'No' }}"
+  tags: [network, wifi, status]
+
+- name: Configure Wi-Fi connection (idempotent)
+  block:
+    - name: Skip Wi-Fi configuration if already properly connected
+      debug:
+        msg: "✅ Wi-Fi is already connected to {{ wifi_config.ssid }}. Skipping configuration."
+      when: 
+        - existing_connection.rc == 0
+        - active_connection.rc == 0
+        - connected_to_target.rc == 0
+
+    - name: Delete existing Wi-Fi connection if it exists but is not properly connected
+      shell: nmcli connection delete "{{ wifi_config.ssid }}"
+      become: true
+      when: 
+        - existing_connection.rc == 0
+        - (active_connection.rc != 0 or connected_to_target.rc != 0)
+      register: connection_deleted
+
+    - name: Create Wi-Fi connection
+      shell: |
+        nmcli device wifi connect "{{ wifi_config.ssid }}" password "{{ wifi_config.password }}" ifname "{{ wifi_interface.stdout }}"
+      become: true
+      register: wifi_connection_result
+      retries: "{{ network_retry_count }}"
+      delay: "{{ network_retry_delay }}"
+      until: wifi_connection_result.rc == 0
+      when: 
+        - existing_connection.rc != 0 or 
+          (existing_connection.rc == 0 and (active_connection.rc != 0 or connected_to_target.rc != 0))
+
+    - name: Verify Wi-Fi connection status
+      shell: nmcli connection show --active | grep "{{ wifi_config.ssid }}"
+      register: connection_status
+      changed_when: false
+      retries: 5
+      delay: 2
+      until: connection_status.rc == 0
+  tags: [network, wifi, configure]
+
+- name: Wi-Fi connection verification and summary
+  block:
+    - name: Get Wi-Fi IP address
+      shell: ip addr show "{{ wifi_interface.stdout }}" | grep 'inet ' | awk '{print $2}' | cut -d/ -f1
+      register: wifi_ip
+      changed_when: false
+      when: connection_status.rc == 0
+
+    - name: Display Wi-Fi connection success
+      debug:
+        msg:
+          - "🎯 Wi-Fi Connection Established Successfully!"
+          - "📶 SSID: {{ wifi_config.ssid }}"
+          - "🔌 Interface: {{ wifi_interface.stdout }}"
+          - "🌐 IP Address: {{ wifi_ip.stdout if wifi_ip.stdout is defined and wifi_ip.stdout != '' else 'Obtaining...' }}"
+          - "✅ Status: Connected and Active"
+      when: connection_status.rc == 0
+  tags: [network, wifi, verification] 

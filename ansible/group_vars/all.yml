@@ -1,0 +1,39 @@
+---
+# Global variables for all hosts
+
+# Ansible configuration
+ansible_python_interpreter: /usr/bin/python3
+
+# SSH configuration with hardcoded timeouts
+ansible_ssh_common_args: >-
+  -o StrictHostKeyChecking=no
+  -o UserKnownHostsFile=/dev/null
+  -o ConnectTimeout=10
+  -o ConnectionAttempts=3
+  -o ServerAliveInterval=60
+  -o ServerAliveCountMax=3
+  -o ControlMaster=no
+  -o ControlPersist=no
+
+# Authentication configuration (unified password)
+ansible_become: "{{ lookup('env', 'ANSIBLE_BECOME') | default('true') | bool }}"
+ansible_become_method: "{{ lookup('env', 'ANSIBLE_BECOME_METHOD') | default('sudo') }}"
+ansible_become_pass: "{{ lookup('env', 'JETSON_PASSWORD') | default('') }}"
+
+# Ansible execution timeout
+ansible_timeout: 300
+
+# Default package management
+default_packages:
+  - curl
+  - wget
+  - vim
+  - git
+  - htop
+  - tree
+  - unzip
+  - software-properties-common
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+  - lsb-release 

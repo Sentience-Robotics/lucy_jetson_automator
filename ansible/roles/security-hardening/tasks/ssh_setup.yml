@@ -1,0 +1,91 @@
+---
+# SSH Configuration and Key Deployment Tasks
+
+- name: Display SSH configuration status
+  debug:
+    msg:
+      - "🔑 SSH Configuration:"
+      - "📁 Key deployment: {{ 'Enabled' if ssh_config.enable_key_deployment else 'Disabled' }}"
+      - "🗝️  Key path: {{ ssh_config.public_key_path }}"
+  tags: [security, ssh]
+
+- name: Ensure .ssh directory exists for target user
+  file:
+    path: "/home/{{ ansible_user }}/.ssh"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0700'
+  become: true
+  when: ssh_config.enable_key_deployment
+  tags: [security, ssh]
+
+- name: Determine SSH key file path (container-aware)
+  set_fact:
+    ssh_key_file_path: "{{ '/home/ansible/.ssh/' + (ssh_config.public_key_path | basename) }}"
+  delegate_to: localhost
+  when: ssh_config.enable_key_deployment
+  tags: [security, ssh]
+
+- name: Check if SSH public key file exists locally
+  stat:
+    path: "{{ ssh_key_file_path }}"
+  register: ssh_key_file_check
+  delegate_to: localhost
+  when: ssh_config.enable_key_deployment
+  become: false  # Don't use sudo in container
+  tags: [security, ssh]
+
+- name: Fail if SSH public key file not found
+  fail:
+    msg: "SSH public key file not found: {{ ssh_key_file_path }}"
+  when: 
+    - ssh_config.enable_key_deployment
+    - not ssh_key_file_check.stat.exists
+  tags: [security, ssh]
+
+- name: Read SSH public key from local file
+  slurp:
+    src: "{{ ssh_key_file_path }}"
+  register: ssh_public_key_content
+  delegate_to: localhost
+  when: 
+    - ssh_config.enable_key_deployment
+    - ssh_key_file_check.stat.exists
+  become: false  # Don't use sudo in container
+  tags: [security, ssh]
+
+- name: Deploy SSH public key to authorized_keys
+  authorized_key:
+    user: "{{ ansible_user }}"
+    state: present
+    key: "{{ ssh_public_key_content.content | b64decode | trim }}"
+    comment: "Deployed by Sentience Robotics Jetson Setup - {{ ansible_date_time.iso8601 }}"
+  become: true
+  when: ssh_config.enable_key_deployment
+  register: ssh_key_deployed
+  tags: [security, ssh]
+
+- name: Display SSH key deployment result
+  debug:
+    msg: "✅ SSH public key added to authorized_keys for user {{ ansible_user }}"
+  when: 
+    - ssh_config.enable_key_deployment
+    - ssh_key_deployed.changed
+  tags: [security, ssh]
+
+- name: Set proper permissions on authorized_keys
+  file:
+    path: "/home/{{ ansible_user }}/.ssh/authorized_keys"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0600'
+  become: true
+  when: ssh_config.enable_key_deployment
+  tags: [security, ssh]
+
+- name: Display SSH configuration result
+  debug:
+    msg: "✅ SSH configuration complete. Public key deployed for passwordless authentication."
+  when: ssh_config.enable_key_deployment
+  tags: [security, ssh] 

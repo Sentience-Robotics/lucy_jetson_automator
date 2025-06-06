@@ -1,0 +1,101 @@
+---
+# Group variables for Jetson devices
+
+# Connection settings
+ansible_connection: ssh
+ansible_user: "{{ lookup('env', 'JETSON_USER') }}"
+ansible_host: "{{ lookup('env', 'JETSON_HOST') }}"
+ansible_port: 22
+ansible_ssh_private_key_file: "{{ lookup('env', 'SSH_PRIVATE_KEY_PATH') | default('/home/ansible/.ssh/id_rsa') }}"
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+# Common Jetson device settings
+jetpack_version: "{{ lookup('env', 'JETSON_JETPACK_VERSION') | default('6.2') }}"
+device_type: nvidia_jetson_agx_orin
+
+# System configuration
+jetson_hostname: "{{ lookup('env', 'JETSON_HOSTNAME') | default('jetson-agx') }}"
+
+# Network configuration 
+wifi_ssid: "{{ lookup('env', 'WIFI_SSID') | default('') }}"
+wifi_password: "{{ lookup('env', 'WIFI_PASSWORD') | default('') }}"
+
+# SSH configuration (unified with SSH_PUBLIC_KEY_PATH)
+ssh_config:
+  enable_key_deployment: true
+  public_key_path: "{{ lookup('env', 'SSH_PUBLIC_KEY_PATH') | default('') }}"
+
+# System update configuration
+system_update:
+  enabled: true
+  upgrade_type: dist
+  reboot_enabled: true
+
+# Isaac ROS platform (optional by default)
+setup_isaac_ros: "{{ lookup('env', 'SETUP_ISAAC_ROS') | default('false') | bool }}"
+
+# Isaac ROS specific configuration
+isaac_ros_config:
+  # Performance settings for optimal Isaac ROS operation
+  enable_jetson_clocks: true
+  enable_max_power_mode: true
+  
+  # Docker configuration for Isaac ROS containers
+  setup_docker_buildx: true
+  add_user_to_docker_group: true
+  
+  # JetPack validation for Isaac ROS compatibility
+  validate_jetpack_version: true
+  expected_jetpack_release: "R36"
+  expected_jetpack_revision: "4.0"
+
+# Shell configuration
+shell_config:
+  install_zsh: true
+  install_oh_my_zsh: true
+  oh_my_zsh_theme: "af-magic"
+  oh_my_zsh_plugins:
+    - git
+    - zsh-autosuggestions
+  set_default_shell: true
+
+# Essential packages for Jetson devices (base + Isaac ROS + shell)
+essential_packages:
+  # Base packages
+  - curl
+  - wget
+  - vim
+  - git
+  - htop
+  - tree
+  - unzip
+  - software-properties-common
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  # Shell packages
+  - zsh
+  - fonts-powerline
+  # Isaac ROS specific packages
+  - nvidia-container-toolkit
+  - docker-buildx-plugin
+
+# Jetson-specific development packages
+jetson_essential_packages:
+  - build-essential
+  - cmake
+  - python3-dev
+  - python3-pip
+  - python3-venv
+  - can-utils
+  - i2c-tools
+  - nvidia-jetpack
+  - nvidia-jetpack-dev
+
+# Display configuration
+display_configuration:
+  system_info: true
+  disk_usage: true
+  jetson_info: true
+  hardware_validation: true 

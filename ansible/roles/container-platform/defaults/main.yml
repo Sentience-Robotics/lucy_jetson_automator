@@ -1,0 +1,29 @@
+---
+# Container Platform defaults
+
+# Docker configuration
+docker_config:
+  install_docker: true
+  add_user_to_group: true
+  enable_service: true
+
+# Docker packages to install
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+# NVIDIA Container configuration
+nvidia_container:
+  install_toolkit: true
+  configure_runtime: true
+
+# NVIDIA packages to install
+nvidia_packages:
+  - nvidia-docker2
+  - nvidia-container-runtime
+
+# Display information
+display_container_info: true 

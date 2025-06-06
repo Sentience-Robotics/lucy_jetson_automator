@@ -1,0 +1,147 @@
+---
+# System Foundation Setup Tasks
+
+- name: Display system foundation information
+  debug:
+    msg:
+      - "🏗️  Starting System Foundation Setup"
+      - "🖥️  Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "🐧 OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+      - "📦 Updating packages and installing essentials"
+  when: display_system_info | default(true)
+  tags: [system, foundation]
+
+- name: Clear any existing apt locks
+  shell: |
+    rm -f /var/lib/apt/lists/lock
+    rm -f /var/cache/apt/archives/lock
+    rm -f /var/lib/dpkg/lock*
+    dpkg --configure -a
+  become: true
+  ignore_errors: true
+  tags: [system, packages, cleanup]
+
+- name: Check for Docker repository conflicts
+  shell: apt-cache policy docker-ce 2>&1 || true
+  register: docker_repo_conflict_check
+  changed_when: false
+  become: true
+  tags: [system, packages, conflict-resolution]
+
+- name: Resolve Docker repository conflicts if detected
+  block:
+    - name: Remove conflicting Docker repository files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/docker.list
+        - /etc/apt/keyrings/docker.gpg
+      become: true
+
+    - name: Clean apt cache after removing conflicts
+      command: apt clean
+      become: true
+
+    - name: Display Docker conflict resolution
+      debug:
+        msg: "🔧 Resolved Docker repository conflicts to enable package operations"
+
+    - name: Update package cache after conflict resolution
+      apt:
+        update_cache: true
+      become: true
+      retries: 3
+      delay: 5
+      register: apt_update_result
+
+  when: 
+    - "'Conflicting values' in docker_repo_conflict_check.stdout"
+  tags: [system, packages, conflict-resolution]
+
+- name: Update apt package cache (if no conflicts detected)
+  apt:
+    update_cache: "{{ apt_update_cache }}"
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+  register: apt_update_result
+  become: true
+  retries: "{{ apt_retry_count }}"
+  delay: "{{ apt_retry_delay }}"
+  until: apt_update_result is succeeded
+  when: "'Conflicting values' not in docker_repo_conflict_check.stdout"
+  tags: [system, packages, update]
+
+- name: Display update cache result
+  debug:
+    msg: "📦 Package cache {{ 'updated' if apt_update_result.changed else 'was already up-to-date' }}"
+  when: 
+    - apt_update_result is defined
+    - display_package_results | default(true)
+  tags: [system, packages]
+
+- name: Upgrade all packages
+  apt:
+    upgrade: "{{ upgrade_type }}"
+    autoremove: "{{ autoremove }}"
+    autoclean: "{{ autoclean }}"
+    allow_downgrade: true
+  register: apt_upgrade_result
+  become: true
+  when: apt_upgrade | default(true)
+  retries: "{{ apt_retry_count }}"
+  delay: "{{ apt_retry_delay }}"
+  until: apt_upgrade_result is succeeded
+  notify: check_reboot_required
+  tags: [system, packages, upgrade]
+
+- name: Display upgrade results
+  debug:
+    msg:
+      - "📈 Package upgrade: {{ 'Completed' if apt_upgrade_result.changed else 'No updates needed' }}"
+      - "📊 Packages processed: {{ apt_upgrade_result.stdout_lines | length if apt_upgrade_result.stdout_lines is defined else 0 }}"
+  when: 
+    - apt_upgrade_result is defined
+    - display_package_results | default(true)
+  tags: [system, packages]
+
+- name: Install essential system packages
+  apt:
+    name: "{{ essential_packages }}"
+    state: present
+    update_cache: false  # Cache already updated above
+  register: essential_packages_result
+  become: true
+  retries: "{{ apt_retry_count }}"
+  delay: "{{ apt_retry_delay }}"
+  until: essential_packages_result is succeeded
+  tags: [system, packages, essential]
+
+- name: Display essential packages result
+  debug:
+    msg: "✅ Essential packages: {{ 'Installed successfully' if essential_packages_result is succeeded else 'Installation failed' }}"
+  when: display_package_results | default(true)
+  tags: [system, packages]
+
+- name: Check if reboot is required
+  stat:
+    path: /var/run/reboot-required
+  register: reboot_required_file
+  tags: [system, reboot]
+
+- name: Display reboot requirement
+  debug:
+    msg: 
+      - "🔄 Reboot status: {{ 'Required (kernel/core packages updated)' if reboot_required_file.stat.exists else 'Not required' }}"
+      - "{% if reboot_required_file.stat.exists %}⚠️  A reboot is recommended to complete system updates{% endif %}"
+  tags: [system, reboot]
+
+- name: System foundation summary
+  debug:
+    msg:
+      - "🎯 System Foundation Setup Complete!"
+      - "📦 Package cache: Updated"
+      - "📈 System packages: {{ 'Upgraded' if apt_upgrade_result.changed else 'Up to date' }}"
+      - "✅ Essential packages: Installed"
+      - "🔄 Reboot required: {{ 'Yes' if reboot_required_file.stat.exists else 'No' }}"
+      - "🏗️  System foundation ready for next phase"
+  tags: [system, foundation] 
