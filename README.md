@@ -12,7 +12,7 @@ Automated Ansible setup for NVIDIA Jetson AGX Orin devices, optimized for roboti
 ### 2. **Clone and Setup**
 ```bash
 git clone <repository-url>
-cd isaac-sim-vps-setup
+cd lucy_jetson_automator
 make init
 ```
 
@@ -41,6 +41,24 @@ SETUP_ISAAC_ROS=false
 make setup
 ```
 
+## VPS automation hub (tier‑0)
+
+Management Jenkins runs on a **VPS** reachable only over **VPN** (SSH + UI). Bootstrap installs Docker, optional UFW rules for the VPN CIDR, and starts Jenkins via Compose with a persistent volume.
+
+From the VPS (after cloning this repo, e.g. under `/opt/lucy-infra`):
+
+```bash
+export VPS_VPN_ALLOW_CIDR=10.8.0.0/24   # when VPS_CONFIGURE_FIREWALL=true
+export VPS_CONTROLLER_REPO_URL=https://github.com/your-org/lucy_jetson_automator.git
+export VPS_JENKINS_URL=https://jenkins.vpn.example/   # CasC location.url (optional but recommended)
+make validate-env-vps
+make bootstrap-jenkins    # or ./bootstrap-vps.sh
+```
+
+Operational detail: [docs/runbooks/README.md](docs/runbooks/README.md) and [ansible/ARCHITECTURE.md](ansible/ARCHITECTURE.md).
+
+**Inventories:** Jetson lab hosts use `ansible/inventory/jetson-lan/`; CI/agents over VPN should target `ansible/inventory/jetson-vpn/`. Check connectivity with `make ping` or `make ping-jetson-vpn`.
+
 ## 🏗️ Architecture
 
 The setup follows a **performance-first, modular architecture** with optimized execution order:
@@ -54,35 +72,17 @@ The setup follows a **performance-first, modular architecture** with optimized e
 6. **🤖 Isaac ROS Platform** - ROS 2 Humble + Isaac ROS (optional)
 7. **👤 User Environment** - Shell configuration and development tools
 
-## 🌟 Features
-
-### **🚀 Performance Optimized**
-- **jetson_clocks** enabled for maximum performance
-- **MAXN** power mode configuration
-- **CPU governor** optimization
-- **Ethernet latency reduction** for robot manipulators (64μs rx-usecs)
-
-### **🌐 Advanced Networking**
-- **Parallel WiFi/Ethernet** connections with intelligent failover
-- **Network monitoring service** with automatic recovery
-- **Connection priorities** and auto-retry configuration
-- **Idempotent** network setup (no unnecessary disconnections)
-
-### **🔧 Production Ready**
-- **Completely idempotent** - safe to run multiple times
-- **Modular roles** - run specific components independently  
-- **Smart dependency management** - roles execute in optimal order
-- **Comprehensive logging** - detailed setup progress and monitoring
-
 The playbook can automatically deploy your public key if `SSH_PUBLIC_KEY_PATH` is set.
 
 ## 📋 Available Commands
 
 ### **Main Setup**
 ```bash
-make setup              # Complete optimized setup
-make setup-check        # Dry run (check mode)
-make ping              # Test connection
+make setup               # Complete optimized setup
+make setup-check         # Dry run (check mode)
+make ping                # Test Jetson (LAN inventory)
+make ping-jetson-vpn     # Test Jetson (VPN inventory)
+make bootstrap-jenkins   # VPS: Docker + Jenkins (see VPS section)
 ```
 
 ### **Specialized Setup**
@@ -122,14 +122,16 @@ Each role can be configured via variables in `ansible/group_vars/jetson_devices.
 
 ### **Tags and Selective Execution**
 ```bash
+cd ansible
+
 # Performance only
-ansible-playbook playbooks/jetson-setup.yml --tags performance
+ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags performance
 
 # Network configuration
-ansible-playbook playbooks/jetson-setup.yml --tags network,wifi
+ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags network,wifi
 
 # Container platform
-ansible-playbook playbooks/jetson-setup.yml --tags docker,containers
+ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags docker,containers
 ```
 
 ## 🛠️ Troubleshooting
@@ -195,14 +197,6 @@ To find out more on how you can contribute to the project, please check our [CON
 ## 📜 License
 
 This project is licensed under the **GNU GPL V3 License**. See the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙌 Acknowledgments
-<!-- Add, as needed, the peoples, organisation or projects that helped this project -->
-
-- 🎉 [InMoov Project](https://inmoov.fr/) – Original design by Gael Langevin<br>
-- 🎉 **All contributors** to the InMoov community<br>
 
 ---
 

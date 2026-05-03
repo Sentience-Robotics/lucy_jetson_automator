@@ -1,0 +1,8 @@
+jobs:
+  - script: |
+      def groovyFile = new File("/var/jenkins_home/jobdsl/lucy-jobs.groovy")
+      if (!groovyFile.exists()) {
+        throw new FileNotFoundException("Missing ${groovyFile.absolutePath} — rebuild controller image with jenkins/dsl/*.groovy")
+      }
+      def shell = new groovy.lang.GroovyShell(this.binding)
+      shell.evaluate(groovyFile.text)

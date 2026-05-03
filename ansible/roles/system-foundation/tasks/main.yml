@@ -4,10 +4,10 @@
 - name: Display system foundation information
   debug:
     msg:
-      - "🏗️  Starting System Foundation Setup"
-      - "🖥️  Target: {{ inventory_hostname }} ({{ ansible_host }})"
-      - "🐧 OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"
-      - "📦 Updating packages and installing essentials"
+      - "Starting System Foundation Setup"
+      - "Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+      - "Updating packages and installing essentials"
   when: display_system_info | default(true)
   tags: [system, foundation]
 
@@ -45,7 +45,7 @@
 
     - name: Display Docker conflict resolution
       debug:
-        msg: "🔧 Resolved Docker repository conflicts to enable package operations"
+        msg: "Resolved Docker repository conflicts to enable package operations"
 
     - name: Update package cache after conflict resolution
       apt:
@@ -73,7 +73,7 @@
 
 - name: Display update cache result
   debug:
-    msg: "📦 Package cache {{ 'updated' if apt_update_result.changed else 'was already up-to-date' }}"
+    msg: "Package cache {{ 'updated' if apt_update_result.changed else 'was already up-to-date' }}"
   when: 
     - apt_update_result is defined
     - display_package_results | default(true)
@@ -97,8 +97,8 @@
 - name: Display upgrade results
   debug:
     msg:
-      - "📈 Package upgrade: {{ 'Completed' if apt_upgrade_result.changed else 'No updates needed' }}"
-      - "📊 Packages processed: {{ apt_upgrade_result.stdout_lines | length if apt_upgrade_result.stdout_lines is defined else 0 }}"
+      - "Package upgrade: {{ 'Completed' if apt_upgrade_result.changed else 'No updates needed' }}"
+      - "Packages processed: {{ apt_upgrade_result.stdout_lines | length if apt_upgrade_result.stdout_lines is defined else 0 }}"
   when: 
     - apt_upgrade_result is defined
     - display_package_results | default(true)
@@ -118,7 +118,7 @@
 
 - name: Display essential packages result
   debug:
-    msg: "✅ Essential packages: {{ 'Installed successfully' if essential_packages_result is succeeded else 'Installation failed' }}"
+    msg: "Essential packages: {{ 'Installed successfully' if essential_packages_result is succeeded else 'Installation failed' }}"
   when: display_package_results | default(true)
   tags: [system, packages]
 
@@ -131,17 +131,17 @@
 - name: Display reboot requirement
   debug:
     msg: 
-      - "🔄 Reboot status: {{ 'Required (kernel/core packages updated)' if reboot_required_file.stat.exists else 'Not required' }}"
-      - "{% if reboot_required_file.stat.exists %}⚠️  A reboot is recommended to complete system updates{% endif %}"
+      - "Reboot status: {{ 'Required (kernel/core packages updated)' if reboot_required_file.stat.exists else 'Not required' }}"
+      - "{% if reboot_required_file.stat.exists %}Warning: A reboot is recommended to complete system updates{% endif %}"
   tags: [system, reboot]
 
 - name: System foundation summary
   debug:
     msg:
-      - "🎯 System Foundation Setup Complete!"
-      - "📦 Package cache: Updated"
-      - "📈 System packages: {{ 'Upgraded' if apt_upgrade_result.changed else 'Up to date' }}"
-      - "✅ Essential packages: Installed"
-      - "🔄 Reboot required: {{ 'Yes' if reboot_required_file.stat.exists else 'No' }}"
-      - "🏗️  System foundation ready for next phase"
+      - "System Foundation Setup Complete!"
+      - "Package cache: Updated"
+      - "System packages: {{ 'Upgraded' if apt_upgrade_result.changed else 'Up to date' }}"
+      - "Essential packages: Installed"
+      - "Reboot required: {{ 'Yes' if reboot_required_file.stat.exists else 'No' }}"
+      - "System foundation ready for next phase"
   tags: [system, foundation] 

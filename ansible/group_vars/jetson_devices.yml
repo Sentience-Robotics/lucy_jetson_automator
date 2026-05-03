@@ -1,5 +1,8 @@
 ---
-# Group variables for Jetson devices
+# Group variables for Jetson devices (overrides all.yml for this group).
+
+# Become on Jetson uses JETSON_PASSWORD when needed (SSH password auth or sudo).
+ansible_become_pass: "{{ lookup('env', 'JETSON_PASSWORD') | default('', true) }}"
 
 # Connection settings
 ansible_connection: ssh

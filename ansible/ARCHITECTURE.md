@@ -1,8 +1,15 @@
 # Ansible Architecture
-
 ## 🎯 **Overview**
 
-The Ansible project follows best practices with improved role organization, clear separation of concerns, and optimized execution order.
+The Ansible layout splits **Jetson edge provisioning** from **VPS tier‑0 controller bootstrap**:
+
+| Track | Inventory | Entry playbook |
+|-------|-----------|----------------|
+| Jetson (LAN lab) | `inventory/jetson-lan/` | `playbooks/jetson-setup.yml` |
+| Jetson over VPN | `inventory/jetson-vpn/` | same playbook — Jenkins/agents should prefer VPN hosts |
+| VPS localhost bootstrap | `inventory/vps-bootstrap/` | `playbooks/vps-bootstrap.yml` (Docker, UFW, Jenkins Compose) |
+
+Shared vars live under `group_vars/`; Jetson‑specific sudo/password overrides belong in `group_vars/jetson_devices.yml`, not forced globally on localhost/VPS.
 
 ## 🏗️ **Role Structure**
 
@@ -75,10 +82,10 @@ make setup
 # Performance optimization only
 make setup-performance
 
-# Specific phases
-ansible-playbook -i inventory/hosts.yml playbooks/jetson-setup.yml --tags jetson,performance
-ansible-playbook -i inventory/hosts.yml playbooks/jetson-setup.yml --tags network,wifi
-ansible-playbook -i inventory/hosts.yml playbooks/jetson-setup.yml --tags security,ssh
+# Specific phases (run from ansible/)
+ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags jetson,performance
+ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags network,wifi
+ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags security,ssh
 ```
 
 ### **Specialized Commands**
@@ -92,57 +99,6 @@ make setup-wifi
 # Dry run
 make setup-check
 ```
-
-## ✅ **Improvements**
-
-### **Better Organization**
-- Clear single responsibility per role
-- No overlap or duplication (Wi-Fi setup consolidated)
-- Logical execution phases
-
-### **Performance Optimized**
-- Jetson performance optimization runs FIRST
-- All subsequent operations benefit from maximum performance
-- Faster package downloads and installations
-
-### **Idempotent Operations**
-- Wi-Fi configuration only changes when needed
-- Hostname only updated if different
-- SSH keys only deployed if missing
-
-### **Enhanced Maintainability**
-- Easy to modify individual components
-- Clear testing boundaries
-- Better error isolation
-- Proper role dependencies
-
-### **Improved Reusability**
-- Roles can be used independently
-- Easy to mix and match for different setups
-- Better for CI/CD pipelines
-
-## 🎯 **Benefits Summary**
-
-- **🚀 Faster execution**: Performance optimization first
-- **🔧 Better maintenance**: Clear role boundaries
-- **🌐 No duplication**: Single Wi-Fi implementation
-- **🔐 Enhanced security**: Dedicated security role
-- **📦 Modular design**: Independent, reusable roles
-- **⚡ Optimized order**: Logical dependency flow
-
-## 🌐 **Advanced Network Features**
-
-### **Parallel WiFi/Ethernet Connections**
-- **Simultaneous connections**: Both WiFi and Ethernet active
-- **Intelligent failover**: Automatic switching between connections
-- **Connection priorities**: Configurable primary interface preference
-- **Monitoring service**: Continuous connectivity checking with logging
-
-### **Ethernet Latency Optimization** 
-- **Low-latency tuning**: rx-usecs parameter optimization (64μs)
-- **Robot manipulator ready**: Based on [NVIDIA Isaac ROS requirements](https://nvidia-isaac-ros.github.io/getting_started/hardware_setup/compute/preempt_setup.html#reduce-ethernet-latency)
-- **Automatic detection**: Only applies to existing ethernet interfaces
-- **Safe configuration**: Graceful handling of interface conflicts
 
 ### **Network Configuration Options**
 ```yaml
@@ -162,8 +118,3 @@ network_strategy:
 - **Fallback events**: Logged to `/var/log/network-fallback.log`
 - **Systemd service**: `network-fallback.service` for reliable operation
 - **Health checks**: Connectivity testing via ping to external servers
-
-## 👤 **Author Information**
-- **Author**: Charles Madjeri
-- **Company**: Sentience Robotics
-- **License**: MIT

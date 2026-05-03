@@ -70,4 +70,15 @@ wheels/
 docs/_build/
 
 # Local configuration
-local_settings.py 
+local_settings.py
+
+# VPS / Jenkins controller (never commit secrets)
+jenkins/controller.env
+terraform/**/.terraform/
+terraform/**/*.tfstate
+terraform/**/*.tfstate.*
+terraform/**/.terraform.lock.hcl
+terraform/**/backend.tf
+**/secrets/
+
+ansible/collections

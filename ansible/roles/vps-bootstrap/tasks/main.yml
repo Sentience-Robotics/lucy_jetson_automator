@@ -1,0 +1,175 @@
+---
+- name: Ensure aptitude prerequisites for Docker repo
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - apt-transport-https
+      - rsync
+    state: present
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Ensure Docker keyring directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+  when: ansible_os_family == "Debian"
+
+- name: Add Docker apt signing key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+  when: ansible_os_family == "Debian"
+
+- name: Add Docker apt repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/{{ ansible_distribution | lower }}
+      {{ ansible_distribution_release }} stable
+    filename: docker
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install Docker Engine and Compose plugin
+  ansible.builtin.apt:
+    name: "{{ docker_packages }}"
+    state: present
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Ensure Docker service is enabled and running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Install Python Docker SDK for Ansible compose module
+  ansible.builtin.apt:
+    name: python3-pip
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install docker Python library
+  ansible.builtin.pip:
+    name:
+      - docker>=7.0.0
+      - requests
+    state: present
+    extra_args: --break-system-packages
+  when: ansible_os_family == "Debian"
+
+- name: Validate VPN CIDR when firewall configuration is enabled
+  ansible.builtin.assert:
+    that:
+      - vps_vpn_allow_cidr | length > 0
+    fail_msg: >-
+      Set VPS_VPN_ALLOW_CIDR (e.g. 10.8.0.0/24) when VPS_CONFIGURE_FIREWALL is true.
+  when: vps_bootstrap_configure_firewall | bool
+
+- name: Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+  when: vps_bootstrap_configure_firewall | bool
+
+- name: Set UFW defaults (deny inbound, allow outbound)
+  community.general.ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: incoming, policy: deny }
+    - { direction: outgoing, policy: allow }
+  when: vps_bootstrap_configure_firewall | bool
+
+- name: Allow SSH from VPN CIDR
+  community.general.ufw:
+    rule: allow
+    port: "{{ vps_ssh_port }}"
+    proto: tcp
+    src: "{{ vps_vpn_allow_cidr }}"
+    comment: SSH from VPN
+  when: vps_bootstrap_configure_firewall | bool
+
+- name: Allow Jenkins UI from VPN CIDR
+  community.general.ufw:
+    rule: allow
+    port: "{{ vps_jenkins_http_port }}"
+    proto: tcp
+    src: "{{ vps_vpn_allow_cidr }}"
+    comment: Jenkins HTTP from VPN
+  when: vps_bootstrap_configure_firewall | bool
+
+- name: Allow Jenkins agent port from VPN CIDR
+  community.general.ufw:
+    rule: allow
+    port: "{{ vps_jenkins_agent_port }}"
+    proto: tcp
+    src: "{{ vps_vpn_allow_cidr }}"
+    comment: Jenkins agent from VPN
+  when: vps_bootstrap_configure_firewall | bool
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+  when: vps_bootstrap_configure_firewall | bool
+
+- name: Ensure Lucy infra root exists
+  ansible.builtin.file:
+    path: "{{ lucy_infra_root }}"
+    state: directory
+    mode: "0755"
+
+- name: Sync automation repository into infra root
+  ansible.posix.synchronize:
+    src: "{{ vps_bootstrap_repo_src_dir }}/"
+    dest: "{{ lucy_infra_root }}/"
+    delete: false
+    recursive: true
+    rsync_opts:
+      - "--exclude=.git"
+      - "--exclude=.cursor"
+      - "--exclude=**/secrets/"
+      - "--exclude=.venv"
+
+- name: Deploy Jenkins environment template for compose
+  ansible.builtin.template:
+    src: jenkins.env.j2
+    dest: "{{ lucy_infra_root }}/jenkins/.env"
+    mode: "0600"
+
+- name: Install unattended-upgrades
+  ansible.builtin.apt:
+    name: unattended-upgrades
+    state: present
+  when:
+    - ansible_os_family == "Debian"
+    - vps_install_unattended_upgrades | bool
+
+- name: Install fail2ban
+  ansible.builtin.apt:
+    name: fail2ban
+    state: present
+  when:
+    - ansible_os_family == "Debian"
+    - vps_install_fail2ban | bool
+
+- name: Ensure fail2ban service enabled when installed
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: true
+  when:
+    - ansible_os_family == "Debian"
+    - vps_install_fail2ban | bool
+
+- name: Build and start Jenkins stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ lucy_infra_root }}/jenkins"
+    build: always
+    pull: false
+    state: present

@@ -1,0 +1,16 @@
+# Copy to backend.tf (gitignored locally) or pass `-backend-config` at init time.
+# Example for S3-compatible object storage with locking (adjust endpoints for OVH Object Storage).
+
+# terraform {
+#   backend "s3" {
+#     bucket                      = "your-tf-state-bucket"
+#     key                         = "lucy/isaacsim/terraform.tfstate"
+#     region                      = "us-east-1"
+#     endpoint                    = "https://s3.gra.io.cloud.ovh.net"
+#     skip_credentials_validation = true
+#     skip_metadata_api_check     = true
+#     skip_region_validation      = true
+#     force_path_style            = true
+#     encrypt                     = true
+#   }
+# }

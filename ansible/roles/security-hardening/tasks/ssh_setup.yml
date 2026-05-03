@@ -4,9 +4,9 @@
 - name: Display SSH configuration status
   debug:
     msg:
-      - "🔑 SSH Configuration:"
-      - "📁 Key deployment: {{ 'Enabled' if ssh_config.enable_key_deployment else 'Disabled' }}"
-      - "🗝️  Key path: {{ ssh_config.public_key_path }}"
+      - "SSH Configuration:"
+      - "Key deployment: {{ 'Enabled' if ssh_config.enable_key_deployment else 'Disabled' }}"
+      - "Key path: {{ ssh_config.public_key_path }}"
   tags: [security, ssh]
 
 - name: Ensure .ssh directory exists for target user
@@ -33,7 +33,7 @@
   register: ssh_key_file_check
   delegate_to: localhost
   when: ssh_config.enable_key_deployment
-  become: false  # Don't use sudo in container
+  become: false
   tags: [security, ssh]
 
 - name: Fail if SSH public key file not found
@@ -52,7 +52,7 @@
   when: 
     - ssh_config.enable_key_deployment
     - ssh_key_file_check.stat.exists
-  become: false  # Don't use sudo in container
+  become: false
   tags: [security, ssh]
 
 - name: Deploy SSH public key to authorized_keys
@@ -68,7 +68,7 @@
 
 - name: Display SSH key deployment result
   debug:
-    msg: "✅ SSH public key added to authorized_keys for user {{ ansible_user }}"
+    msg: "SSH public key added to authorized_keys for user {{ ansible_user }}"
   when: 
     - ssh_config.enable_key_deployment
     - ssh_key_deployed.changed
@@ -86,6 +86,6 @@
 
 - name: Display SSH configuration result
   debug:
-    msg: "✅ SSH configuration complete. Public key deployed for passwordless authentication."
+    msg: "SSH configuration complete. Public key deployed for passwordless authentication."
   when: ssh_config.enable_key_deployment
   tags: [security, ssh] 

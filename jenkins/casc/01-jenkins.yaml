@@ -1,0 +1,20 @@
+jenkins:
+  systemMessage: >
+    Lucy automation controller — reach only via VPN. Tier-0 service: patch Jenkins regularly,
+    review docs/runbooks. OIDC/Vault per roadmap.
+  numExecutors: 2
+  markupFormatter: plainText
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false
+
+security:
+  apiToken:
+    creationOfLegacyTokenEnabled: false
+    tokenGenerationOnCreationEnabled: false
+    usageStatisticsEnabled: false
+
+unclassified:
+  location:
+    # Set JENKINS_URL in jenkins/.env (e.g. https://jenkins.vpn.example/) — templated on bootstrap.
+    url: "${JENKINS_URL}"

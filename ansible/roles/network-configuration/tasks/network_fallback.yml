@@ -4,10 +4,10 @@
 - name: Display network fallback configuration
   debug:
     msg:
-      - "🔄 Configuring Network Fallback Strategy"
-      - "⚙️  Mode: {{ network_strategy.connection_mode }}"
-      - "🥇 Primary preference: {{ network_strategy.primary_interface_preference }}"
-      - "⏱️  Check interval: {{ network_strategy.fallback_check_interval }}s"
+      - "Configuring Network Fallback Strategy"
+      - "Mode: {{ network_strategy.connection_mode }}"
+      - "Primary preference: {{ network_strategy.primary_interface_preference }}"
+      - "Check interval: {{ network_strategy.fallback_check_interval }}s"
   tags: [network, fallback]
 
 - name: Configure NetworkManager for connection priorities
@@ -178,9 +178,9 @@
 - name: Display network fallback summary
   debug:
     msg:
-      - "✅ Network Fallback Configuration Complete!"
-      - "🔄 Monitoring service: Enabled and running"
-      - "📊 Connection priorities configured"
-      - "⚙️  Primary preference: {{ network_strategy.primary_interface_preference }}"
-      - "📝 Logs available at: /var/log/network-fallback.log"
+      - "Network Fallback Configuration Complete!"
+      - "Monitoring service: Enabled and running"
+      - "Connection priorities configured"
+      - "Primary preference: {{ network_strategy.primary_interface_preference }}"
+      - "Logs available at: /var/log/network-fallback.log"
   tags: [network, fallback] 

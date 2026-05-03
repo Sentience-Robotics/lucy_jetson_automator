@@ -4,9 +4,9 @@
 - name: Display container platform information
   debug:
     msg:
-      - "🐳 Starting Container Platform Setup"
-      - "🖥️  Target: {{ inventory_hostname }} ({{ ansible_host }})"
-      - "🔧 Installing Docker Engine and NVIDIA Container Runtime"
+      - "Starting Container Platform Setup"
+      - "Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "Installing Docker Engine and NVIDIA Container Runtime"
   when: display_container_info | default(true)
   tags: [docker, containers]
 
@@ -204,9 +204,9 @@
 - name: Container platform summary
   debug:
     msg:
-      - "🎯 Container Platform Setup Complete!"
-      - "🐳 Docker: {{ docker_version.stdout }}"
-      - "🖥️  NVIDIA Runtime: {{ 'Available' if nvidia_test.rc == 0 else 'Not available (check GPU access)' }}"
-      - "👤 User '{{ ansible_user }}' added to docker group"
-      - "✅ Container platform ready for robotics workloads"
+      - "Container Platform Setup Complete!"
+      - "Docker: {{ docker_version.stdout }}"
+      - "NVIDIA Runtime: {{ 'Available' if nvidia_test.rc == 0 else 'Not available (check GPU access)' }}"
+      - "User '{{ ansible_user }}' added to docker group"
+      - "Container platform ready for robotics workloads"
   tags: [docker, containers] 

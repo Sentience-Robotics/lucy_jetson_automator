@@ -1,10 +1,8 @@
 ---
-# Global variables for all hosts
+# Global variables for all hosts (no Jetson-specific secrets — see group_vars/jetson_devices.yml).
 
-# Ansible configuration
 ansible_python_interpreter: /usr/bin/python3
 
-# SSH configuration with hardcoded timeouts
 ansible_ssh_common_args: >-
   -o StrictHostKeyChecking=no
   -o UserKnownHostsFile=/dev/null
@@ -15,15 +13,13 @@ ansible_ssh_common_args: >-
   -o ControlMaster=no
   -o ControlPersist=no
 
-# Authentication configuration (unified password)
 ansible_become: "{{ lookup('env', 'ANSIBLE_BECOME') | default('true') | bool }}"
 ansible_become_method: "{{ lookup('env', 'ANSIBLE_BECOME_METHOD') | default('sudo') }}"
-ansible_become_pass: "{{ lookup('env', 'JETSON_PASSWORD') | default('') }}"
+# VPS / localhost bootstrap: set ANSIBLE_BECOME_PASS when sudo requires a password.
+ansible_become_pass: "{{ lookup('env', 'ANSIBLE_BECOME_PASS') | default('', true) }}"
 
-# Ansible execution timeout
 ansible_timeout: 300
 
-# Default package management
 default_packages:
   - curl
   - wget
@@ -36,4 +32,4 @@ default_packages:
   - apt-transport-https
   - ca-certificates
   - gnupg
-  - lsb-release 
+  - lsb-release

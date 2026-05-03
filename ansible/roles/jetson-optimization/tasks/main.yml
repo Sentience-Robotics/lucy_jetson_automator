@@ -4,9 +4,9 @@
 - name: Display optimization information
   debug:
     msg:
-      - "🚀 Starting Jetson AGX Orin Performance Optimization"
-      - "⚡ Target: {{ inventory_hostname }} ({{ ansible_host }})"
-      - "🔧 Enabling maximum performance settings"
+      - "Starting Jetson AGX Orin Performance Optimization"
+      - "Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "Enabling maximum performance settings"
   when: display_optimization_info | default(true)
   tags: [jetson, performance]
 
@@ -43,7 +43,7 @@
 
     - name: Display jetson_clocks result
       debug:
-        msg: "✅ Jetson clocks set to maximum performance"
+        msg: "Jetson clocks set to maximum performance"
       when: 
         - jetson_performance.enable_jetson_clocks | default(true)
         - jetson_clocks_result is succeeded
@@ -62,7 +62,7 @@
 
     - name: Display power mode result
       debug:
-        msg: "✅ Power mode set to MAXN (maximum performance)"
+        msg: "Power mode set to MAXN (maximum performance)"
       when:
         - jetson_performance.enable_max_power_mode | default(true)
         - nvpmodel_result is succeeded
@@ -80,7 +80,7 @@
     - name: Display current power mode
       debug:
         msg: 
-          - "🔍 Current Jetson Power Configuration:"
+          - "Current Jetson Power Configuration:"
           - "{{ power_mode_status.stdout_lines }}"
       when: power_mode_status.stdout_lines is defined
       tags: [jetson, performance]
@@ -109,7 +109,7 @@
 
     - name: Display CPU governor result
       debug:
-        msg: "✅ CPU governor set to {{ jetson_performance.cpu_governor }}"
+        msg: "CPU governor set to {{ jetson_performance.cpu_governor }}"
       when: cpu_governor_result is succeeded
       tags: [jetson, performance]
 
@@ -138,7 +138,7 @@
 
     - name: Display tool installation result
       debug:
-        msg: "{{ 'ℹ️  Ethernet tools already installed' if ethernet_tools_install is skipped else ('✅ Ethernet tools installed' if ethernet_tools_install is succeeded else '⚠️  Tool installation had issues - continuing with existing tools') }}"
+        msg: "{{ 'Ethernet tools already installed' if ethernet_tools_install is skipped else ('Ethernet tools installed' if ethernet_tools_install is succeeded else 'Tool installation had issues - continuing with existing tools') }}"
       tags: [jetson, performance, ethernet]
 
     - name: Check if ethernet interface exists
@@ -177,10 +177,10 @@
         - name: Display ethernet optimization result
           debug:
             msg: 
-              - "✅ Ethernet latency optimization applied"
-              - "🔌 Interface: {{ ethernet_optimization.interface_name }}"
-              - "⚡ rx-usecs: {{ ethernet_optimization.rx_usecs_value }}"
-              - "📊 Current setting: {{ ethtool_verify.stdout }}"
+              - "Ethernet latency optimization applied"
+              - "Interface: {{ ethernet_optimization.interface_name }}"
+              - "rx-usecs: {{ ethernet_optimization.rx_usecs_value }}"
+              - "Current setting: {{ ethtool_verify.stdout }}"
           tags: [jetson, performance]
 
       when: 
@@ -190,12 +190,12 @@
       rescue:
         - name: Display ethernet optimization warning
           debug:
-            msg: "⚠️  Ethernet latency optimization failed - interface may be in use or not support tuning"
+            msg: "Ethernet latency optimization failed - interface may be in use or not support tuning"
           tags: [jetson, performance]
 
     - name: Display ethernet optimization status
       debug:
-        msg: "ℹ️  Ethernet interface {{ ethernet_optimization.interface_name }} not found - skipping latency optimization"
+        msg: "Ethernet interface {{ ethernet_optimization.interface_name }} not found - skipping latency optimization"
       when: ethernet_interface_check.rc != 0
       tags: [jetson, performance]
 
@@ -205,10 +205,10 @@
 - name: Performance optimization summary
   debug:
     msg:
-      - "🎯 Jetson AGX Orin Performance Optimization Complete!"
-      - "⚡ Jetson clocks: {{ 'Enabled' if jetson_performance.enable_jetson_clocks else 'Disabled' }}"
-      - "🔋 Power mode: {{ 'MAXN (Maximum)' if jetson_performance.enable_max_power_mode else 'Default' }}"
-      - "🖥️  CPU governor: {{ jetson_performance.cpu_governor if available_governors is defined and available_governors.rc == 0 else 'Not configured' }}"
-      - "🔌 Ethernet latency: {{ 'Optimized (rx-usecs: ' + ethernet_optimization.rx_usecs_value|string + ')' if ethernet_optimization.enable_latency_reduction else 'Not configured' }}"
-      - "✅ System optimized for maximum performance"
+      - "Jetson AGX Orin Performance Optimization Complete!"
+      - "Jetson clocks: {{ 'Enabled' if jetson_performance.enable_jetson_clocks else 'Disabled' }}"
+      - "Power mode: {{ 'MAXN (Maximum)' if jetson_performance.enable_max_power_mode else 'Default' }}"
+      - "CPU governor: {{ jetson_performance.cpu_governor if available_governors is defined and available_governors.rc == 0 else 'Not configured' }}"
+      - "Ethernet latency: {{ 'Optimized (rx-usecs: ' + ethernet_optimization.rx_usecs_value|string + ')' if ethernet_optimization.enable_latency_reduction else 'Not configured' }}"
+      - "System optimized for maximum performance"
   tags: [jetson, performance] 

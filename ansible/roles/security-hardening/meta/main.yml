@@ -1,10 +1,10 @@
 ---
 galaxy_info:
   role_name: security-hardening
-  author: Charles Madjeri
+  author: Sentience Robotics
   description: Security hardening including SSH configuration and access control
   company: Sentience Robotics
-  license: MIT
+  license: GPL-3.0-only
   min_ansible_version: 2.9
   platforms:
     - name: Ubuntu

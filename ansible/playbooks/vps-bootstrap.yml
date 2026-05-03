@@ -1,0 +1,27 @@
+---
+- name: Bootstrap VPS controller (Docker, firewall, Jenkins Compose)
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Minimal facts when gathering disabled elsewhere
+      ansible.builtin.setup:
+        gather_subset:
+          - "!all"
+          - "!min"
+          - distribution
+          - distribution_release
+          - distribution_version
+          - os_family
+
+  roles:
+    - role: vps-bootstrap
+
+  post_tasks:
+    - name: Backup reminder for Jenkins volume
+      ansible.builtin.debug:
+        msg: >-
+          Schedule encrypted backups of the Jenkins Docker volume per docs/runbooks/backup-jenkins-volume.md
+          (target RTO/RPO in docs/runbooks/disaster-recovery-rpo-rto.md).

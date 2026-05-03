@@ -1,0 +1,31 @@
+---
+lucy_infra_root: /opt/lucy-infra
+
+# Sync full repository checkout into lucy_infra_root (needed for Jenkins image build context + playbooks).
+vps_bootstrap_repo_src_dir: "{{ playbook_dir }}/../.."
+
+vps_bootstrap_configure_firewall: "{{ lookup('env', 'VPS_CONFIGURE_FIREWALL') | default('true') | bool }}"
+# CIDR allowed to reach SSH and Jenkins (VPN subnet). Required when firewall is enabled.
+vps_vpn_allow_cidr: "{{ lookup('env', 'VPS_VPN_ALLOW_CIDR') | default('') }}"
+vps_ssh_port: "{{ lookup('env', 'VPS_SSH_PORT') | default('22') | int }}"
+vps_jenkins_http_port: "{{ lookup('env', 'VPS_JENKINS_HTTP_PORT') | default('8080') | int }}"
+vps_jenkins_agent_port: "{{ lookup('env', 'VPS_JENKINS_AGENT_PORT') | default('50000') | int }}"
+# Bind Jenkins published ports to this address (loopback or VPN-facing IP on host).
+vps_jenkins_bind_address: "{{ lookup('env', 'VPS_JENKINS_BIND') | default('127.0.0.1') }}"
+
+# Git URL Jenkins jobs clone (HTTPS / SSH). Export VPS_CONTROLLER_REPO_URL when running bootstrap.
+controller_repo_url: "{{ lookup('env', 'VPS_CONTROLLER_REPO_URL') | default('', true) }}"
+
+# Public URL for Jenkins (CasC location.url). Prefer https://jenkins.vpn.example/ when operators reach UI by hostname.
+vps_jenkins_external_url: "{{ lookup('env', 'VPS_JENKINS_URL') | default('', true) }}"
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+# Optional host hardening (Debian/Ubuntu VPS).
+vps_install_unattended_upgrades: "{{ lookup('env', 'VPS_INSTALL_UNATTENDED_UPGRADES') | default(false) | bool }}"
+vps_install_fail2ban: "{{ lookup('env', 'VPS_INSTALL_FAIL2BAN') | default(false) | bool }}"

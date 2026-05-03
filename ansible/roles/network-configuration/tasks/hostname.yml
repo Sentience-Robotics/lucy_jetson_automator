@@ -9,7 +9,7 @@
 
 - name: Display current hostname
   debug:
-    msg: "🏠 Current hostname: {{ current_hostname.stdout }}"
+    msg: "Current hostname: {{ current_hostname.stdout }}"
   tags: [network, hostname]
 
 - name: Check if hostname change is needed
@@ -45,13 +45,13 @@
 
     - name: Display hostname configuration result
       debug:
-        msg: "✅ Hostname successfully changed from '{{ current_hostname.stdout }}' to '{{ hostname_config.jetson_hostname }}'"
+        msg: "Hostname successfully changed from '{{ current_hostname.stdout }}' to '{{ hostname_config.jetson_hostname }}'"
       tags: [network, hostname]
 
   when: hostname_needs_change | bool
 
 - name: Display hostname status (no change needed)
   debug:
-    msg: "✅ Hostname already set to '{{ hostname_config.jetson_hostname }}' - no change needed"
+    msg: "Hostname already set to '{{ hostname_config.jetson_hostname }}' - no change needed"
   when: not (hostname_needs_change | bool)
   tags: [network, hostname] 

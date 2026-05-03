@@ -8,5 +8,5 @@
   
 - name: notify_reboot_required
   debug:
-    msg: "⚠️  System reboot required to complete updates. Please reboot when convenient."
+    msg: "System reboot required to complete updates. Please reboot when convenient."
   when: reboot_required.stat.exists 

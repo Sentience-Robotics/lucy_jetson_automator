@@ -4,10 +4,10 @@
 - name: Display security hardening information
   debug:
     msg:
-      - "🔐 Starting Security Hardening"
-      - "🖥️  Target: {{ inventory_hostname }} ({{ ansible_host }})"
-      - "🔑 SSH Key Deployment: {{ 'Enabled' if ssh_config.enable_key_deployment else 'Disabled (using password auth)' }}"
-      - "🛡️  Configuring secure access controls"
+      - "Starting Security Hardening"
+      - "Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "SSH Key Deployment: {{ 'Enabled' if ssh_config.enable_key_deployment else 'Disabled (using password auth)' }}"
+      - "Configuring secure access controls"
   when: display_security_info | default(true)
   tags: [security, info]
 
@@ -18,8 +18,8 @@
 - name: Security hardening summary
   debug:
     msg:
-      - "🎯 Security Hardening Complete!"
-      - "🔑 SSH Keys: {{ 'Deployed and configured' if ssh_config.enable_key_deployment else 'Not configured (password auth)' }}"
-      - "🛡️  Access Control: Configured"
-      - "🔐 Security setup ready for next phase"
+      - "Security Hardening Complete!"
+      - "SSH Keys: {{ 'Deployed and configured' if ssh_config.enable_key_deployment else 'Not configured (password auth)' }}"
+      - "Access Control: Configured"
+      - "Security setup ready for next phase"
   tags: [security] 

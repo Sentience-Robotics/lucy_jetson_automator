@@ -46,8 +46,8 @@
     - name: Display Wi-Fi interface information
       debug:
         msg: 
-          - "📶 Wi-Fi interface found: {{ wifi_interface.stdout }}"
-          - "🌐 Configuring connection to SSID: {{ wifi_config.ssid }}"
+          - "Wi-Fi interface found: {{ wifi_interface.stdout }}"
+          - "Configuring connection to SSID: {{ wifi_config.ssid }}"
       when: wifi_interface.stdout != ""
 
     - name: Fail if no Wi-Fi interface found
@@ -80,17 +80,17 @@
     - name: Display current Wi-Fi connection status
       debug:
         msg:
-          - "📊 Wi-Fi Connection Status:"
-          - "📋 Connection exists: {{ 'Yes' if existing_connection.rc == 0 else 'No' }}"
-          - "🔛 Connection active: {{ 'Yes' if (existing_connection.rc == 0 and active_connection.rc == 0) else 'No' }}"
-          - "📶 Connected to target SSID: {{ 'Yes' if connected_to_target.rc == 0 else 'No' }}"
+          - "Wi-Fi Connection Status:"
+          - "Connection exists: {{ 'Yes' if existing_connection.rc == 0 else 'No' }}"
+          - "Connection active: {{ 'Yes' if (existing_connection.rc == 0 and active_connection.rc == 0) else 'No' }}"
+          - "Connected to target SSID: {{ 'Yes' if connected_to_target.rc == 0 else 'No' }}"
   tags: [network, wifi, status]
 
 - name: Configure Wi-Fi connection (idempotent)
   block:
     - name: Skip Wi-Fi configuration if already properly connected
       debug:
-        msg: "✅ Wi-Fi is already connected to {{ wifi_config.ssid }}. Skipping configuration."
+        msg: "Wi-Fi is already connected to {{ wifi_config.ssid }}. Skipping configuration."
       when: 
         - existing_connection.rc == 0
         - active_connection.rc == 0
@@ -136,10 +136,10 @@
     - name: Display Wi-Fi connection success
       debug:
         msg:
-          - "🎯 Wi-Fi Connection Established Successfully!"
-          - "📶 SSID: {{ wifi_config.ssid }}"
-          - "🔌 Interface: {{ wifi_interface.stdout }}"
-          - "🌐 IP Address: {{ wifi_ip.stdout if wifi_ip.stdout is defined and wifi_ip.stdout != '' else 'Obtaining...' }}"
-          - "✅ Status: Connected and Active"
+          - "Wi-Fi Connection Established Successfully!"
+          - "SSID: {{ wifi_config.ssid }}"
+          - "Interface: {{ wifi_interface.stdout }}"
+          - "IP Address: {{ wifi_ip.stdout if wifi_ip.stdout is defined and wifi_ip.stdout != '' else 'Obtaining...' }}"
+          - "Status: Connected and Active"
       when: connection_status.rc == 0
   tags: [network, wifi, verification] 

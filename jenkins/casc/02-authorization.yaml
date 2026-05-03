@@ -1,0 +1,9 @@
+jenkins:
+  # VPN + MFA are assumed for human operators. Split Admin vs Operator via folder roles once identities exist
+  # (see docs/runbooks/jenkins-rbac-matrix.md). Until LDAP/OIDC lands, any authenticated user may administer —
+  # tighten immediately when more than one Jenkins account exists.
+  authorizationStrategy:
+    globalMatrix:
+      permissions:
+        - "Overall/Administer:authenticated"
+        - "Overall/Read:authenticated"

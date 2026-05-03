@@ -4,9 +4,9 @@
 - name: Display Isaac ROS platform information
   debug:
     msg:
-      - "🤖 Starting Isaac ROS Platform Setup"
-      - "🖥️  Target: {{ inventory_hostname }} ({{ ansible_host }})"
-      - "⚠️  Isaac ROS setup: {{ 'Enabled' if setup_isaac_ros | default(false) else 'Disabled (optional)' }}"
+      - "Starting Isaac ROS Platform Setup"
+      - "Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "Isaac ROS setup: {{ 'Enabled' if setup_isaac_ros | default(false) else 'Disabled (optional)' }}"
   when: display_isaac_info | default(true)
   tags: [isaac, ros]
 
@@ -75,11 +75,11 @@
     - name: Isaac ROS setup summary
       debug:
         msg:
-          - "🎯 Isaac ROS Platform Setup Complete!"
-          - "🤖 ROS 2 Humble: Installed"
-          - "📁 Workspace: {{ ros_workspace_path }}"
-          - "🔧 Dependencies: Installed"
-          - "✅ Ready for Isaac ROS development"
+          - "Isaac ROS Platform Setup Complete!"
+          - "ROS 2 Humble: Installed"
+          - "Workspace: {{ ros_workspace_path }}"
+          - "Dependencies: Installed"
+          - "Ready for Isaac ROS development"
       tags: [isaac, ros]
 
   when: setup_isaac_ros | default(false)
@@ -87,8 +87,8 @@
 - name: Isaac ROS skipped notification
   debug:
     msg:
-      - "ℹ️  Isaac ROS Platform Setup: SKIPPED"
-      - "🤖 To enable: Set setup_isaac_ros: true in configuration"
-      - "📝 This is optional for basic Jetson setup"
+      - "Isaac ROS Platform Setup: SKIPPED"
+      - "To enable: Set setup_isaac_ros: true in configuration"
+      - "This is optional for basic Jetson setup"
   when: not (setup_isaac_ros | default(false))
   tags: [isaac, ros] 

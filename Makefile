@@ -6,6 +6,7 @@ export
 DOCKER_IMAGE_NAME = jetson-ansible
 CONTAINER_NAME = jetson-ansible-runner
 ANSIBLE_DIR = ./ansible
+JETSON_INVENTORY = $(ANSIBLE_DIR)/inventory/jetson-lan/hosts.yml
 
 # Default target
 .DEFAULT_GOAL := help
@@ -34,7 +35,7 @@ setup: validate-env ## Run complete Jetson setup with optimized architecture
 		--env-file .env \
 		-w /ansible \
 		$(DOCKER_IMAGE_NAME) \
-		ansible-playbook -i inventory/hosts.yml playbooks/jetson-setup.yml -vvv
+		ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml -vvv
 
 .PHONY: setup-performance
 setup-performance: validate-env ## Run performance optimization only (jetson-optimization role)
@@ -47,7 +48,7 @@ setup-performance: validate-env ## Run performance optimization only (jetson-opt
 		--env-file .env \
 		-w /ansible \
 		$(DOCKER_IMAGE_NAME) \
-		ansible-playbook -i inventory/hosts.yml playbooks/jetson-setup.yml --tags jetson,performance -v
+		ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags jetson,performance -v
 
 .PHONY: ping
 ping: validate-env ## Test connection to Jetson device
@@ -60,7 +61,20 @@ ping: validate-env ## Test connection to Jetson device
 		--env-file .env \
 		-w /ansible \
 		$(DOCKER_IMAGE_NAME) \
-		ansible -i inventory/hosts.yml jetson -m ping
+		ansible -i inventory/jetson-lan/hosts.yml jetson -m ping
+
+.PHONY: ping-jetson-vpn
+ping-jetson-vpn: validate-env ## Test connection to Jetson over VPN inventory
+	@echo "Testing connection to Jetson (VPN inventory)..."
+	docker run --rm \
+		--name $(CONTAINER_NAME) \
+		-v $(PWD)/$(ANSIBLE_DIR):/ansible \
+		-v $(PWD)/.env:/ansible/.env \
+		-v ~/.ssh:/home/ansible/.ssh:ro \
+		--env-file .env \
+		-w /ansible \
+		$(DOCKER_IMAGE_NAME) \
+		ansible -i inventory/jetson-vpn/hosts.yml jetson -m ping
 
 ##@ Docker Management
 
@@ -112,7 +126,7 @@ setup-hostname: validate-env ## Configure hostname only (requires JETSON_HOSTNAM
 		--env-file .env \
 		-w /ansible \
 		$(DOCKER_IMAGE_NAME) \
-		ansible-playbook -i inventory/hosts.yml playbooks/jetson-setup.yml --tags hostname -v
+		ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags hostname -v
 
 .PHONY: setup-wifi
 setup-wifi: validate-env ## Configure WiFi only (requires WIFI_SSID and WIFI_PASSWORD in .env)
@@ -125,7 +139,7 @@ setup-wifi: validate-env ## Configure WiFi only (requires WIFI_SSID and WIFI_PAS
 		--env-file .env \
 		-w /ansible \
 		$(DOCKER_IMAGE_NAME) \
-		ansible-playbook -i inventory/hosts.yml playbooks/jetson-setup.yml --tags wifi -v
+		ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags wifi -v
 
 .PHONY: setup-check
 setup-check: validate-env ## Run setup in check mode (dry run)
@@ -138,7 +152,27 @@ setup-check: validate-env ## Run setup in check mode (dry run)
 		--env-file .env \
 		-w /ansible \
 		$(DOCKER_IMAGE_NAME) \
-		ansible-playbook -i inventory/hosts.yml playbooks/jetson-setup.yml --check -v
+		ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --check -v
+
+##@ VPS controller (run on the VPS over VPN)
+
+.PHONY: validate-env-vps
+validate-env-vps: ## Validate VPS bootstrap environment variables
+	@echo "Validating VPS bootstrap environment..."
+	@if [ "$(VPS_CONFIGURE_FIREWALL)" = "false" ]; then \
+		echo "Firewall skipped (VPS_CONFIGURE_FIREWALL=false)."; \
+	elif [ -z "$(VPS_VPN_ALLOW_CIDR)" ]; then \
+		echo "Error: VPS_VPN_ALLOW_CIDR not set (VPN subnet CIDR, e.g. 10.8.0.0/24)."; \
+		exit 1; \
+	fi
+	@if [ -z "$(VPS_CONTROLLER_REPO_URL)" ]; then \
+		echo "Warning: VPS_CONTROLLER_REPO_URL empty — Jenkins jobs need CONTROLLER_REPO_URL in /opt/lucy-infra/jenkins/.env"; \
+	fi
+	@echo "✅ VPS environment validation passed"
+
+.PHONY: bootstrap-jenkins
+bootstrap-jenkins: validate-env-vps ## Install Docker, firewall rules, and Jenkins via Ansible (localhost)
+	ansible-playbook -i $(ANSIBLE_DIR)/inventory/vps-bootstrap/hosts.yml $(ANSIBLE_DIR)/playbooks/vps-bootstrap.yml
 
 ##@ Utilities
 

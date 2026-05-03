@@ -11,8 +11,8 @@
 - name: Display ethernet interface information
   debug:
     msg:
-      - "🔌 Ethernet Interface: {{ ethernet_config.interface_name }}"
-      - "📊 Status: {{ 'Found' if ethernet_interface_status.rc == 0 else 'Not found' }}"
+      - "Ethernet Interface: {{ ethernet_config.interface_name }}"
+      - "Status: {{ 'Found' if ethernet_interface_status.rc == 0 else 'Not found' }}"
   tags: [network, ethernet]
 
 - name: Configure ethernet interface
@@ -45,9 +45,9 @@
     - name: Display ethernet connection information
       debug:
         msg:
-          - "🔌 Ethernet Interface: {{ ethernet_config.interface_name }}"
-          - "🔗 Connection: {{ ethernet_connection_status.stdout }}"
-          - "🌐 IP Address: {{ ethernet_ip.stdout if ethernet_ip.stdout is defined and ethernet_ip.stdout != '' else 'Not assigned' }}"
+          - "Ethernet Interface: {{ ethernet_config.interface_name }}"
+          - "Connection: {{ ethernet_connection_status.stdout }}"
+          - "IP Address: {{ ethernet_ip.stdout if ethernet_ip.stdout is defined and ethernet_ip.stdout != '' else 'Not assigned' }}"
       tags: [network, ethernet]
 
     - name: Create ethernet monitoring facts
@@ -62,6 +62,6 @@
 
 - name: Handle missing ethernet interface
   debug:
-    msg: "⚠️  Ethernet interface {{ ethernet_config.interface_name }} not found - skipping ethernet configuration"
+    msg: "Ethernet interface {{ ethernet_config.interface_name }} not found - skipping ethernet configuration"
   when: ethernet_interface_status.rc != 0
   tags: [network, ethernet] 

@@ -4,13 +4,13 @@
 - name: Display network configuration information
   debug:
     msg:
-      - "🌐 Starting Network Configuration"
-      - "🖥️  Target: {{ inventory_hostname }} ({{ ansible_host }})"
-      - "🏠 Hostname: {{ hostname_config.jetson_hostname if hostname_config.jetson_hostname != '' else 'No change requested' }}"
-      - "📶 Wi-Fi: {{ 'Enabled (' + wifi_config.ssid + ')' if wifi_config.enabled else 'Disabled' }}"
-      - "🔌 Ethernet: {{ ethernet_config.interface_name + ' (monitored)' if ethernet_config.enable_monitoring else ethernet_config.interface_name }}"
-      - "⚙️  Connection mode: {{ network_strategy.connection_mode }}"
-      - "🔄 Fallback enabled: {{ 'Yes' if network_strategy.enable_fallback else 'No' }}"
+      - "Starting Network Configuration"
+      - "Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "Hostname: {{ hostname_config.jetson_hostname if hostname_config.jetson_hostname != '' else 'No change requested' }}"
+      - "Wi-Fi: {{ 'Enabled (' + wifi_config.ssid + ')' if wifi_config.enabled else 'Disabled' }}"
+      - "Ethernet: {{ ethernet_config.interface_name + ' (monitored)' if ethernet_config.enable_monitoring else ethernet_config.interface_name }}"
+      - "Connection mode: {{ network_strategy.connection_mode }}"
+      - "Fallback enabled: {{ 'Yes' if network_strategy.enable_fallback else 'No' }}"
   when: display_network_info | default(true)
   tags: [network, info]
 
@@ -41,11 +41,11 @@
 - name: Network configuration summary
   debug:
     msg:
-      - "🎯 Network Configuration Complete!"
-      - "🏠 Hostname: {{ 'Updated to ' + hostname_config.jetson_hostname if hostname_config.jetson_hostname != '' else 'No change' }}"
-      - "🔌 Ethernet: {{ 'Configured and monitored' if ethernet_config.enable_monitoring else 'Basic configuration' }}"
-      - "📶 Wi-Fi: {{ 'Connected to ' + wifi_config.ssid if wifi_config.enabled else 'Not configured' }}"
-      - "⚙️  Strategy: {{ network_strategy.connection_mode + ' connections' }}"
-      - "🔄 Fallback: {{ 'Enabled' if network_strategy.enable_fallback else 'Disabled' }}"
-      - "🌐 Network setup ready for next phase"
+      - "Network Configuration Complete!"
+      - "Hostname: {{ 'Updated to ' + hostname_config.jetson_hostname if hostname_config.jetson_hostname != '' else 'No change' }}"
+      - "Ethernet: {{ 'Configured and monitored' if ethernet_config.enable_monitoring else 'Basic configuration' }}"
+      - "Wi-Fi: {{ 'Connected to ' + wifi_config.ssid if wifi_config.enabled else 'Not configured' }}"
+      - "Strategy: {{ network_strategy.connection_mode + ' connections' }}"
+      - "Fallback: {{ 'Enabled' if network_strategy.enable_fallback else 'Disabled' }}"
+      - "Network setup ready for next phase"
   tags: [network] 

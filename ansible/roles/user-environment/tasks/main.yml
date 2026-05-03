@@ -4,10 +4,10 @@
 - name: Display user environment information
   debug:
     msg:
-      - "👤 Starting User Environment Setup"
-      - "🖥️  Target: {{ inventory_hostname }} ({{ ansible_host }})"
-      - "🐚 Configuring shell environment and development tools"
-      - "👤 User: {{ ansible_user }}"
+      - "Starting User Environment Setup"
+      - "Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "Configuring shell environment and development tools"
+      - "User: {{ ansible_user }}"
   when: display_user_info | default(true)
   tags: [user, environment]
 
@@ -105,9 +105,9 @@
 - name: User environment summary
   debug:
     msg:
-      - "🎯 User Environment Setup Complete!"
-      - "🐚 Shell: {{ 'zsh with oh-my-zsh' if shell_config.install_zsh else 'default' }}"
-      - "🛠️  Development tools: {{ 'Installed' if dev_config.install_tools else 'Skipped' }}"
-      - "⚙️  Custom aliases: {{ 'Configured' if shell_config.configure_aliases else 'Skipped' }}"
-      - "✅ User environment ready for development"
+      - "User Environment Setup Complete!"
+      - "Shell: {{ 'zsh with oh-my-zsh' if shell_config.install_zsh else 'default' }}"
+      - "Development tools: {{ 'Installed' if dev_config.install_tools else 'Skipped' }}"
+      - "Custom aliases: {{ 'Configured' if shell_config.configure_aliases else 'Skipped' }}"
+      - "User environment ready for development"
   tags: [user, environment] 
