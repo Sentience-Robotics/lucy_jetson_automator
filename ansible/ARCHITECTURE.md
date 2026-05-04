@@ -7,7 +7,7 @@ The Ansible layout splits **Jetson edge provisioning** from **VPS tier‑0 contr
 |-------|-----------|----------------|
 | Jetson (LAN lab) | `inventory/jetson-lan/` | `playbooks/jetson-setup.yml` |
 | Jetson over VPN | `inventory/jetson-vpn/` | same playbook — Jenkins/agents should prefer VPN hosts |
-| VPS localhost bootstrap | `inventory/vps-bootstrap/` | `playbooks/vps-bootstrap.yml` (Docker, UFW, Jenkins Compose) |
+| VPS bootstrap (remote only) | Temp inventory from **`./bootstrap-vps.sh`** (requires **`VPS_SSH_HOST`** + **`VPS_SSH_USER`** in `.env`) | `playbooks/vps-bootstrap.yml` — Ansible always SSHes to the VPS; never targets localhost |
 
 Shared vars live under `group_vars/`; Jetson‑specific sudo/password overrides belong in `group_vars/jetson_devices.yml`, not forced globally on localhost/VPS.
 
@@ -74,35 +74,23 @@ Shared vars live under `group_vars/`; Jetson‑specific sudo/password overrides 
 
 ## 🚀 **Usage**
 
-### **Setup Commands**
+### **Jetson playbook (run from `ansible/`, not via root Makefile)**
+
+In **Jenkins**, **`lucy/jetson-config`** injects `JETSON_HOST`, `JETSON_USER`, etc. via **credentials** (see job description + `docs/README.md`). For a **local** `ansible-playbook` run only, export those names in your shell yourself (no committed env template).
+
 ```bash
-# Complete setup with optimized architecture
-make setup
-
-# Performance optimization only
-make setup-performance
-
-# Specific phases (run from ansible/)
+cd ansible
+ansible-galaxy collection install -r requirements.yml
+ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml
 ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags jetson,performance
 ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags network,wifi
 ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --tags security,ssh
-```
-
-### **Specialized Commands**
-```bash
-# Hostname configuration
-make setup-hostname
-
-# WiFi configuration  
-make setup-wifi
-
-# Dry run
-make setup-check
+ansible-playbook -i inventory/jetson-lan/hosts.yml playbooks/jetson-setup.yml --check
 ```
 
 ### **Network Configuration Options**
 ```yaml
-# Environment variables
+# Jenkins credentials / parameters (not root .env)
 WIFI_SSID=YourNetwork
 WIFI_PASSWORD=yourpassword
 

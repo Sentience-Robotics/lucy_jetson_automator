@@ -63,14 +63,6 @@
     extra_args: --break-system-packages
   when: ansible_os_family == "Debian"
 
-- name: Validate VPN CIDR when firewall configuration is enabled
-  ansible.builtin.assert:
-    that:
-      - vps_vpn_allow_cidr | length > 0
-    fail_msg: >-
-      Set VPS_VPN_ALLOW_CIDR (e.g. 10.8.0.0/24) when VPS_CONFIGURE_FIREWALL is true.
-  when: vps_bootstrap_configure_firewall | bool
-
 - name: Install UFW
   ansible.builtin.apt:
     name: ufw
@@ -86,31 +78,28 @@
     - { direction: outgoing, policy: allow }
   when: vps_bootstrap_configure_firewall | bool
 
-- name: Allow SSH from VPN CIDR
+- name: Allow SSH (TCP)
   community.general.ufw:
     rule: allow
     port: "{{ vps_ssh_port }}"
     proto: tcp
-    src: "{{ vps_vpn_allow_cidr }}"
-    comment: SSH from VPN
+    comment: SSH
   when: vps_bootstrap_configure_firewall | bool
 
-- name: Allow Jenkins UI from VPN CIDR
+- name: Allow Jenkins UI (TCP)
   community.general.ufw:
     rule: allow
     port: "{{ vps_jenkins_http_port }}"
     proto: tcp
-    src: "{{ vps_vpn_allow_cidr }}"
-    comment: Jenkins HTTP from VPN
+    comment: Jenkins HTTP
   when: vps_bootstrap_configure_firewall | bool
 
-- name: Allow Jenkins agent port from VPN CIDR
+- name: Allow Jenkins agent port (TCP)
   community.general.ufw:
     rule: allow
     port: "{{ vps_jenkins_agent_port }}"
     proto: tcp
-    src: "{{ vps_vpn_allow_cidr }}"
-    comment: Jenkins agent from VPN
+    comment: Jenkins agent
   when: vps_bootstrap_configure_firewall | bool
 
 - name: Enable UFW
@@ -167,9 +156,21 @@
     - ansible_os_family == "Debian"
     - vps_install_fail2ban | bool
 
+- name: Build Jenkins Docker cloud agent image (Terraform/Ansible; matches pipelines)
+  ansible.builtin.command:
+    argv:
+      - docker
+      - build
+      - -f
+      - "{{ lucy_infra_root }}/jenkins/Dockerfile.agent"
+      - -t
+      - lucy-jenkins-agent:local
+      - "{{ lucy_infra_root }}"
+  changed_when: true
+
 - name: Build and start Jenkins stack
   community.docker.docker_compose_v2:
     project_src: "{{ lucy_infra_root }}/jenkins"
     build: always
-    pull: false
+    pull: never
     state: present

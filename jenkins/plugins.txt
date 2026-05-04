@@ -1,4 +1,6 @@
+cloudbees-folder
 configuration-as-code
+dark-theme
 job-dsl
 workflow-aggregator
 workflow-job
@@ -8,9 +10,11 @@ pipeline-model-definition
 git
 credentials-binding
 credentials
+docker-plugin
 ssh-agent
 matrix-auth
 role-strategy
 audit-trail
 script-security
+theme-manager
 token-macro

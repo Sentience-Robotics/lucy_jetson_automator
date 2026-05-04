@@ -1,13 +1,9 @@
 pipeline {
-  agent any
+  agent { label 'docker' }
   options {
     timestamps()
   }
-  parameters {
-    string(name: 'SERVER_ID', defaultValue: '', description: 'OpenStack server UUID (nova)')
-    string(name: 'OS_CLOUD_NAME', defaultValue: 'openstack', description: 'Cloud entry name inside clouds.yaml')
-    choice(name: 'DESIRED_POWER', choices: ['running', 'stopped'], description: 'Target power state (Nova stop/start)')
-  }
+  // Parameters are defined in Job DSL (lucy-jobs.groovy) so "Build with Parameters" lists GIT_REF + OVH fields together before checkout.
   stages {
     stage('Validate parameters') {
       steps {

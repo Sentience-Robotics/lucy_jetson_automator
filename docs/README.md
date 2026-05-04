@@ -21,15 +21,17 @@
 
 ## Bootstrap the VPS controller
 
-1. Join the management VPN and SSH to the VPS.
-2. Clone this repository to `/opt/lucy-infra` (or another path — `lucy_infra_root` defaults to `/opt/lucy-infra`).
-3. Export context for Ansible:
-   - `VPS_VPN_ALLOW_CIDR` — VPN subnet allowed to reach SSH + Jenkins (required when `VPS_CONFIGURE_FIREWALL=true`).
+Bootstrap is **remote-only**: run Ansible from a machine that can SSH to the VPS (laptop or bastion), not by executing the playbook on the VPS against `localhost`.
+
+1. Join the management VPN.
+2. Clone this repository on your **control machine** (not necessarily on the VPS). Copy `.env.example` → `.env` and set **`VPS_SSH_HOST`**, **`VPS_SSH_USER`**, and the variables below.
+3. Context for Ansible (in `.env`):
+   - `VPS_CONFIGURE_FIREWALL` — when `true`, UFW allows **SSH**, **Jenkins HTTP**, and **agent** TCP ports from any source (no CIDR list in this repo); use provider security groups, VPN, and `VPS_JENKINS_BIND` for real exposure control.
    - `VPS_CONTROLLER_REPO_URL` — Git remote Jenkins jobs clone (`https://…` or `git@…`).
    - `VPS_JENKINS_BIND` — bind published ports (often VPN-facing IP or `127.0.0.1` behind SSH tunnel).
-   - `ANSIBLE_BECOME_PASS` or use `-K` if sudo requires a password.
-4. Run: `./bootstrap-vps.sh` (or `make bootstrap-jenkins`).
-5. Jenkins home persists in the Docker volume `jenkins_home`. Logs: `docker compose -f /opt/lucy-infra/jenkins/docker-compose.yml logs -f jenkins`.
+   - `ANSIBLE_BECOME_PASS` or use `-K` if sudo on the **VPS** requires a password.
+4. Run: `make ansible-collections`, then `./bootstrap-vps.sh` (or `make bootstrap-jenkins`). The playbook rsyncs the repo to `lucy_infra_root` on the VPS (default `/opt/lucy-infra`).
+5. Jenkins home persists in the Docker volume `jenkins_home` on the VPS. Logs (on the VPS): `docker compose -f /opt/lucy-infra/jenkins/docker-compose.yml logs -f jenkins`.
 
 ### Tier-0 Jenkins hygiene
 
@@ -38,6 +40,8 @@
 - Keep an **offline encrypted backup** of `/var/lib/docker/volumes/jenkins_home` (or the named volume contents) and rehearse restore quarterly; document **RTO/RPO**.
 
 ## Jenkins credentials (IDs referenced by pipelines)
+
+The repo root **`.env`** is for **VPS bootstrap** only (`VPS_*` plus required **`VPS_SSH_HOST`** / **`VPS_SSH_USER`**). **Jetson** secrets are **not** in Git: create them under **Manage Jenkins → Credentials** using the **exact IDs** below (the **`lucy/jetson-config`** job description repeats this checklist). The pipeline binds them with `withCredentials` and never commits values.
 
 Create these in Jenkins (folder `lucy` inherits or global depending on your layout):
 
@@ -51,6 +55,8 @@ Create these in Jenkins (folder `lucy` inherits or global depending on your layo
 | `jetson-wifi-password` | Secret text | Optional Wi‑Fi password |
 | `jetson-jetpack-version` | Secret text | e.g. `6.2` |
 | `openstack-clouds-yaml` | Secret file | Standard OpenStack `clouds.yaml` for OVH |
+
+**`lucy/jetson-config` job parameters** (not credentials): `GIT_REF`, `ANSIBLE_TAGS`, and **`SETUP_ISAAC_ROS`** (boolean) are defined in Job DSL and appear on **Build with Parameters**; the pipeline exports `SETUP_ISAAC_ROS` for Ansible.
 
 Never commit secrets; prefer Jenkins credentials or Phase‑2 Vault integration.
 

@@ -4,20 +4,21 @@ lucy_infra_root: /opt/lucy-infra
 # Sync full repository checkout into lucy_infra_root (needed for Jenkins image build context + playbooks).
 vps_bootstrap_repo_src_dir: "{{ playbook_dir }}/../.."
 
-vps_bootstrap_configure_firewall: "{{ lookup('env', 'VPS_CONFIGURE_FIREWALL') | default('true') | bool }}"
-# CIDR allowed to reach SSH and Jenkins (VPN subnet). Required when firewall is enabled.
-vps_vpn_allow_cidr: "{{ lookup('env', 'VPS_VPN_ALLOW_CIDR') | default('') }}"
-vps_ssh_port: "{{ lookup('env', 'VPS_SSH_PORT') | default('22') | int }}"
-vps_jenkins_http_port: "{{ lookup('env', 'VPS_JENKINS_HTTP_PORT') | default('8080') | int }}"
-vps_jenkins_agent_port: "{{ lookup('env', 'VPS_JENKINS_AGENT_PORT') | default('50000') | int }}"
+vps_bootstrap_configure_firewall: "{{ lookup('env', 'VPS_CONFIGURE_FIREWALL') | default('true', true) | bool }}"
+# Use default(..., true) so empty .env values (e.g. VAR=) do not become 0 after | int.
+vps_ssh_port: "{{ lookup('env', 'VPS_SSH_PORT') | default('22', true) | int }}"
+vps_jenkins_http_port: "{{ lookup('env', 'VPS_JENKINS_HTTP_PORT') | default('8080', true) | int }}"
+vps_jenkins_agent_port: "{{ lookup('env', 'VPS_JENKINS_AGENT_PORT') | default('50000', true) | int }}"
 # Bind Jenkins published ports to this address (loopback or VPN-facing IP on host).
-vps_jenkins_bind_address: "{{ lookup('env', 'VPS_JENKINS_BIND') | default('127.0.0.1') }}"
+vps_jenkins_bind_address: "{{ lookup('env', 'VPS_JENKINS_BIND') | default('127.0.0.1', true) }}"
 
 # Git URL Jenkins jobs clone (HTTPS / SSH). Export VPS_CONTROLLER_REPO_URL when running bootstrap.
 controller_repo_url: "{{ lookup('env', 'VPS_CONTROLLER_REPO_URL') | default('', true) }}"
 
 # Public URL for Jenkins (CasC location.url). Prefer https://jenkins.vpn.example/ when operators reach UI by hostname.
 vps_jenkins_external_url: "{{ lookup('env', 'VPS_JENKINS_URL') | default('', true) }}"
+# Host GID for /var/run/docker.sock (docker group). Required for Docker cloud agents in Compose group_add.
+vps_jenkins_docker_sock_gid: "{{ lookup('env', 'VPS_JENKINS_DOCKER_SOCK_GID') | default('991', true) }}"
 
 docker_packages:
   - docker-ce

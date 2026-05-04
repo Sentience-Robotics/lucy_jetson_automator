@@ -1,0 +1,6 @@
+# Theme Manager + Dark Theme plugins — https://plugins.jenkins.io/dark-theme/
+appearance:
+  themeManager:
+    # Always use dark UI on the controller (not OS "prefers-color-scheme").
+    theme: "dark"
+    disableUserThemes: false

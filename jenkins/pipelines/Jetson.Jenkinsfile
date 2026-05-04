@@ -1,5 +1,5 @@
 pipeline {
-  agent any
+  agent { label 'docker' }
   options {
     timestamps()
   }
@@ -30,24 +30,28 @@ pipeline {
           string(credentialsId: 'jetson-wifi-password', variable: 'WIFI_PASSWORD'),
           string(credentialsId: 'jetson-jetpack-version', variable: 'JETSON_JETPACK_VERSION')
         ]) {
-          sh '''
+          script {
+            def isaac = (params.get('SETUP_ISAAC_ROS')?.toString() == 'true') ? 'true' : 'false'
+            sh """
             set -eu
-            export ANSIBLE_CONFIG="${WORKSPACE}/ansible/ansible.cfg"
+            export ANSIBLE_CONFIG="\${WORKSPACE}/ansible/ansible.cfg"
             export USE_SSH_KEY_AUTH=true
             export SSH_PUBLIC_KEY_PATH=/nonexistent
-            export ANSIBLE_BECOME_PASS="${JETSON_PASSWORD}"
+            export ANSIBLE_BECOME_PASS="\${JETSON_PASSWORD}"
+            export SETUP_ISAAC_ROS=${isaac}
             cd ansible
-            TAGS="${ANSIBLE_TAGS:-}"
-            if [ -n "$TAGS" ]; then
-              ansible-playbook -i inventory/jetson-vpn/hosts.yml \
-                --private-key "${SSH_PRIVATE_KEY_FILE}" -u "${JETSON_USER}" \
-                playbooks/jetson-setup.yml --tags "$TAGS" -v
+            TAGS="\${ANSIBLE_TAGS:-}"
+            if [ -n "\$TAGS" ]; then
+              ansible-playbook -i inventory/jetson-vpn/hosts.yml \\
+                --private-key "\${SSH_PRIVATE_KEY_FILE}" -u "\${JETSON_USER}" \\
+                playbooks/jetson-setup.yml --tags "\$TAGS" -v
             else
-              ansible-playbook -i inventory/jetson-vpn/hosts.yml \
-                --private-key "${SSH_PRIVATE_KEY_FILE}" -u "${JETSON_USER}" \
+              ansible-playbook -i inventory/jetson-vpn/hosts.yml \\
+                --private-key "\${SSH_PRIVATE_KEY_FILE}" -u "\${JETSON_USER}" \\
                 playbooks/jetson-setup.yml -v
             fi
-          '''
+            """
+          }
         }
       }
     }

@@ -1,0 +1,24 @@
+# Ephemeral Docker agents — avoids running Pipeline workloads on the built-in controller JVM.
+# Requires: /var/run/docker.sock mounted on the controller container + JENKINS_DOCKER_SOCK_GID in jenkins/.env.
+# JENKINS_URL must be reachable from agent containers (avoid 127.0.0.1 unless you use host networking for agents).
+jenkins:
+  clouds:
+    - docker:
+        name: lucy-docker
+        containerCap: 3
+        dockerApi:
+          dockerHost:
+            uri: "unix:///var/run/docker.sock"
+        templates:
+          - name: inbound-jdk21
+            labelString: docker
+            mode: NORMAL
+            remoteFs: /home/jenkins/agent
+            # pullStrategy lives on DockerTemplate, not dockerTemplateBase (docker-plugin CasC).
+            pullStrategy: PULL_NEVER
+            connector:
+              jnlp:
+                jenkinsUrl: "${JENKINS_URL}"
+                user: "1000"
+            dockerTemplateBase:
+              image: "lucy-jenkins-agent:local"
