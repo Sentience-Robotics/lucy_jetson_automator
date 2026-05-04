@@ -1,0 +1,51 @@
+---
+# Network Configuration Tasks
+
+- name: Display network configuration information
+  debug:
+    msg:
+      - "Starting Network Configuration"
+      - "Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "Hostname: {{ hostname_config.jetson_hostname if hostname_config.jetson_hostname != '' else 'No change requested' }}"
+      - "Wi-Fi: {{ 'Enabled (' + wifi_config.ssid + ')' if wifi_config.enabled else 'Disabled' }}"
+      - "Ethernet: {{ ethernet_config.interface_name + ' (monitored)' if ethernet_config.enable_monitoring else ethernet_config.interface_name }}"
+      - "Connection mode: {{ network_strategy.connection_mode }}"
+      - "Fallback enabled: {{ 'Yes' if network_strategy.enable_fallback else 'No' }}"
+  when: display_network_info | default(true)
+  tags: [network, info]
+
+- name: Include hostname configuration tasks
+  include_tasks: hostname.yml
+  when: 
+    - hostname_config.jetson_hostname is defined
+    - hostname_config.jetson_hostname != ""
+  tags: [network, hostname]
+
+- name: Include ethernet configuration tasks
+  include_tasks: ethernet.yml
+  when: ethernet_config.enable_monitoring | default(true)
+  tags: [network, ethernet]
+
+- name: Include Wi-Fi configuration tasks  
+  include_tasks: wifi.yml
+  when: wifi_config.enabled | bool
+  tags: [network, wifi]
+
+- name: Configure network fallback strategy
+  include_tasks: network_fallback.yml
+  when: 
+    - network_strategy.enable_fallback | default(true)
+    - wifi_config.enabled | bool
+  tags: [network, fallback]
+
+- name: Network configuration summary
+  debug:
+    msg:
+      - "Network Configuration Complete!"
+      - "Hostname: {{ 'Updated to ' + hostname_config.jetson_hostname if hostname_config.jetson_hostname != '' else 'No change' }}"
+      - "Ethernet: {{ 'Configured and monitored' if ethernet_config.enable_monitoring else 'Basic configuration' }}"
+      - "Wi-Fi: {{ 'Connected to ' + wifi_config.ssid if wifi_config.enabled else 'Not configured' }}"
+      - "Strategy: {{ network_strategy.connection_mode + ' connections' }}"
+      - "Fallback: {{ 'Enabled' if network_strategy.enable_fallback else 'Disabled' }}"
+      - "Network setup ready for next phase"
+  tags: [network] 

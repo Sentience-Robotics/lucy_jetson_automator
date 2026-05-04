@@ -1,0 +1,19 @@
+---
+galaxy_info:
+  role_name: system-foundation
+  author: Sentience Robotics
+  description: Core system foundation setup - package updates and essential utilities
+  company: Sentience Robotics
+  license: GPL-3.0-only
+  min_ansible_version: 2.9
+  platforms:
+    - name: Ubuntu
+      versions:
+        - "22.04"
+  galaxy_tags:
+    - system
+    - foundation
+    - updates
+    - packages
+
+dependencies: [] 

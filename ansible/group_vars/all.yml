@@ -1,0 +1,35 @@
+---
+# Global variables for all hosts (no Jetson-specific secrets — see group_vars/jetson_devices.yml).
+
+ansible_python_interpreter: /usr/bin/python3
+
+ansible_ssh_common_args: >-
+  -o StrictHostKeyChecking=no
+  -o UserKnownHostsFile=/dev/null
+  -o ConnectTimeout=10
+  -o ConnectionAttempts=3
+  -o ServerAliveInterval=60
+  -o ServerAliveCountMax=3
+  -o ControlMaster=no
+  -o ControlPersist=no
+
+ansible_become: "{{ lookup('env', 'ANSIBLE_BECOME') | default('true') | bool }}"
+ansible_become_method: "{{ lookup('env', 'ANSIBLE_BECOME_METHOD') | default('sudo') }}"
+# VPS remote bootstrap: set ANSIBLE_BECOME_PASS when sudo on the SSH target requires a password.
+ansible_become_pass: "{{ lookup('env', 'ANSIBLE_BECOME_PASS') | default('', true) }}"
+
+ansible_timeout: 300
+
+default_packages:
+  - curl
+  - wget
+  - vim
+  - git
+  - htop
+  - tree
+  - unzip
+  - software-properties-common
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+  - lsb-release

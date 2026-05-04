@@ -1,0 +1,27 @@
+---
+# Isaac ROS Platform defaults
+
+# Isaac ROS setup flag (disabled by default - optional)
+setup_isaac_ros: false
+
+# ROS 2 Humble packages
+ros_packages:
+  - ros-humble-desktop
+  - ros-humble-navigation2
+  - ros-humble-nav2-bringup
+  - python3-rosdep2
+  - python3-colcon-common-extensions
+
+# Isaac ROS specific dependencies
+isaac_dependencies:
+  - python3-vcstool
+  - python3-rosinstall-generator
+  - python3-osrf-pycommon
+  - python3-catkin-tools
+  - ros-dev-tools
+
+# ROS workspace configuration
+ros_workspace_path: "/home/{{ ansible_user | default('ubuntu') }}/ros2_ws"
+
+# Display settings
+display_isaac_info: true 

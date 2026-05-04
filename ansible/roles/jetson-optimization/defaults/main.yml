@@ -1,0 +1,31 @@
+---
+# NVIDIA Jetson AGX Orin Performance Optimization defaults
+
+# Performance optimization settings
+jetson_performance:
+  enable_jetson_clocks: true
+  enable_max_power_mode: true
+  cpu_governor: "performance"
+  gpu_governor: "performance"
+  
+# Power management settings
+jetson_power:
+  power_mode: "MAXN"  # Maximum performance mode
+  enable_power_model: true
+  
+# Thermal management
+jetson_thermal:
+  enable_thermal_management: true
+
+# Ethernet latency optimization (for robot manipulators)
+ethernet_optimization:
+  enable_latency_reduction: true
+  rx_usecs_value: 64
+  interface_name: "eno1"  # Default Jetson ethernet interface
+  
+# Display optimization info
+display_optimization_info: true
+
+# Retry configuration for commands
+optimization_retry_count: 3
+optimization_retry_delay: 5 

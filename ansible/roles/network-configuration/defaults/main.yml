@@ -1,0 +1,38 @@
+---
+# Network Configuration defaults
+
+# Hostname configuration
+hostname_config:
+  jetson_hostname: "{{ lookup('env', 'JETSON_HOSTNAME') }}"
+  update_hosts_file: true
+  
+# Wi-Fi configuration
+wifi_config:
+  ssid: "{{ lookup('env', 'WIFI_SSID') }}"
+  password: "{{ lookup('env', 'WIFI_PASSWORD') }}"
+  enabled: "{{ lookup('env', 'WIFI_SSID') != '' and lookup('env', 'WIFI_PASSWORD') != '' }}"
+  
+# Network connection strategy
+network_strategy:
+  # Options: 'parallel', 'wifi_primary', 'ethernet_primary'
+  connection_mode: "parallel"  # Enable both connections simultaneously
+  enable_fallback: true
+  fallback_check_interval: 30  # seconds
+  primary_interface_preference: "ethernet"  # 'ethernet' or 'wifi'
+
+# Ethernet configuration
+ethernet_config:
+  interface_name: "eno1"
+  enable_monitoring: true
+  
+# NetworkManager settings
+network_manager:
+  install_if_missing: true
+  ensure_running: true
+  
+# Retry configuration
+network_retry_count: 3
+network_retry_delay: 5
+
+# Display settings
+display_network_info: true 

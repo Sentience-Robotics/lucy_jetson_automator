@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Shellcheck bootstrap script
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y shellcheck
+          shellcheck bootstrap-vps.sh
+
+  ansible-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install ansible-lint and collections
+        run: |
+          pip install "ansible-lint>=24.0.0" ansible-core
+          ansible-galaxy collection install -r ansible/requirements.yml
+      - name: ansible-lint
+        working-directory: ansible
+        run: ansible-lint .
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.9.8"
+      - name: terraform fmt
+        run: terraform fmt -check -recursive terraform/
+      - name: terraform validate
+        working-directory: terraform/ovh-instance-lifecycle
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+  jenkins-casc-yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Parse Jenkins CasC YAML
+        run: |
+          python - <<'PY'
+          import pathlib
+          import sys
+          try:
+              import yaml  # type: ignore
+          except ImportError:
+              import subprocess
+              subprocess.check_call([sys.executable, "-m", "pip", "install", "pyyaml"])
+              import yaml  # type: ignore
+
+          root = pathlib.Path("jenkins/casc")
+          errors = 0
+          for path in sorted(root.glob("*.yaml")):
+              try:
+                  yaml.safe_load(path.read_text())
+              except Exception as exc:
+                  errors += 1
+                  print(f"YAML parse failed: {path}: {exc}", file=sys.stderr)
+          sys.exit(errors)
+          PY
+
+  yamllint-casc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: yamllint (CasC + workflows)
+        run: |
+          pip install "yamllint>=1.35.0"
+          yamllint -c .yamllint jenkins/casc/ .github/workflows/
+
+  tflint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: terraform-linters/setup-tflint@v6
+      - name: tflint
+        working-directory: terraform/ovh-instance-lifecycle
+        run: |
+          tflint --init
+          tflint

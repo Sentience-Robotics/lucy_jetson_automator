@@ -1,0 +1,9 @@
+---
+profile: basic
+offline: false
+skip_list:
+  - yaml[line-length]
+  - role-name
+  - name[casing]
+exclude_paths:
+  - .cache/

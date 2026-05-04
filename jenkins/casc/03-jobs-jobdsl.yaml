@@ -1,0 +1,4 @@
+# Job DSL CasC extension — must run scripts through the Job DSL engine (not GroovyShell.evaluate).
+# Image copies jenkins/dsl/*.groovy to /usr/share/jenkins/ref/jobdsl/ → /var/jenkins_home/jobdsl/ on first boot.
+jobs:
+  - file: /var/jenkins_home/jobdsl/lucy-jobs.groovy

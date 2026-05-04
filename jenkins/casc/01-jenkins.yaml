@@ -1,0 +1,24 @@
+jenkins:
+  systemMessage: >
+    Lucy automation controller — reach only via VPN. Tier-0 service: patch Jenkins regularly,
+    review docs/runbooks. OIDC/Vault per roadmap.
+  # Builds run on Docker agents (CasC cloud `docker` label), not the built-in node.
+  numExecutors: 0
+  markupFormatter: plainText
+  # Explicit standard crumb issuer (no deprecated keys). Avoids startup races where CrumbFilter runs before a describable issuer is bound.
+  crumbIssuer:
+    standard: {}
+
+security:
+  apiToken:
+    creationOfLegacyTokenEnabled: false
+    tokenGenerationOnCreationEnabled: false
+    usageStatisticsEnabled: false
+  # UI CSP (Jenkins 2.539+). Remove this block if CasC rejects unknown keys on an older LTS.
+  contentSecurityPolicy:
+    enforce: true
+
+unclassified:
+  location:
+    # Set JENKINS_URL in jenkins/.env (e.g. https://jenkins.vpn.example/) — templated on bootstrap.
+    url: "${JENKINS_URL}"

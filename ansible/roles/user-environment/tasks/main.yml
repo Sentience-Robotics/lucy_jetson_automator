@@ -1,0 +1,113 @@
+---
+# User Environment Setup Tasks
+
+- name: Display user environment information
+  debug:
+    msg:
+      - "Starting User Environment Setup"
+      - "Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "Configuring shell environment and development tools"
+      - "User: {{ ansible_user }}"
+  when: display_user_info | default(true)
+  tags: [user, environment]
+
+- name: Install zsh
+  apt:
+    name: zsh
+    state: present
+  become: true
+  when: shell_config.install_zsh | default(true)
+  tags: [user, environment, shell]
+
+- name: Check if oh-my-zsh is already installed
+  stat:
+    path: "/home/{{ ansible_user }}/.oh-my-zsh"
+  register: oh_my_zsh_dir
+  tags: [user, environment, shell]
+
+- name: Install oh-my-zsh
+  shell: |
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+  become_user: "{{ ansible_user }}"
+  when: 
+    - shell_config.install_oh_my_zsh | default(true)
+    - not oh_my_zsh_dir.stat.exists
+  tags: [user, environment, shell]
+
+- name: Change default shell to zsh
+  user:
+    name: "{{ ansible_user }}"
+    shell: /bin/zsh
+  become: true
+  when: shell_config.set_default_shell | default(true)
+  tags: [user, environment, shell]
+
+- name: Install development tools
+  apt:
+    name: "{{ dev_tools }}"
+    state: present
+  become: true
+  when: dev_config.install_tools | default(true)
+  tags: [user, environment, tools]
+
+- name: Configure zsh aliases and environment
+  blockinfile:
+    path: "/home/{{ ansible_user }}/.zshrc"
+    block: |
+      # Sentience Robotics Development Environment
+      # Custom aliases and functions
+      
+      alias ll='ls -alF'
+      alias la='ls -A'
+      alias l='ls -CF'
+      alias grep='grep --color=auto'
+      alias fgrep='fgrep --color=auto'
+      alias egrep='egrep --color=auto'
+      
+      # Docker aliases
+      alias d='docker'
+      alias dc='docker-compose'
+      alias dps='docker ps'
+      alias dimg='docker images'
+      
+      # Git aliases
+      alias gs='git status'
+      alias ga='git add'
+      alias gc='git commit'
+      alias gp='git push'
+      alias gl='git log --oneline'
+      
+      # ROS aliases (if Isaac ROS is installed)
+      if [ -f "/opt/ros/humble/setup.zsh" ]; then
+        source /opt/ros/humble/setup.zsh
+        alias rosdep-install='rosdep install --from-paths src --ignore-src -r -y'
+      fi
+      
+      # Custom prompt with hostname
+      export PS1="%F{green}%n@{{ inventory_hostname }}%f:%F{blue}%~%f$ "
+    marker: "# {mark} SENTIENCE ROBOTICS CUSTOM CONFIG"
+    create: yes
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  become: true
+  when: shell_config.configure_aliases | default(true)
+  tags: [user, environment, shell]
+
+- name: Set proper permissions on user home directory files
+  file:
+    path: "/home/{{ ansible_user }}/.zshrc"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+  become: true
+  tags: [user, environment, permissions]
+
+- name: User environment summary
+  debug:
+    msg:
+      - "User Environment Setup Complete!"
+      - "Shell: {{ 'zsh with oh-my-zsh' if shell_config.install_zsh else 'default' }}"
+      - "Development tools: {{ 'Installed' if dev_config.install_tools else 'Skipped' }}"
+      - "Custom aliases: {{ 'Configured' if shell_config.configure_aliases else 'Skipped' }}"
+      - "User environment ready for development"
+  tags: [user, environment] 

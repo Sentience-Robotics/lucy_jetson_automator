@@ -1,0 +1,31 @@
+services:
+  jenkins:
+    build:
+      context: ..
+      dockerfile: jenkins/Dockerfile
+    image: lucy-jenkins:local
+    restart: unless-stopped
+    ports:
+      - "${JENKINS_BIND:-127.0.0.1}:${JENKINS_HTTP_PORT:-8080}:8080"
+      - "${JENKINS_BIND:-127.0.0.1}:${JENKINS_AGENT_PORT:-50000}:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - ./casc:/var/jenkins_home/casc_configs:ro
+      # Docker cloud agents (CasC): controller talks to host daemon; GID must match host docker.sock (see jenkins/.env).
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "${JENKINS_DOCKER_SOCK_GID}"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    environment:
+      CASC_JENKINS_CONFIG: /var/jenkins_home/casc_configs
+      JAVA_OPTS: >-
+        -Djava.awt.headless=true
+      CONTROLLER_REPO_URL: "${CONTROLLER_REPO_URL:-}"
+      JENKINS_URL: "${JENKINS_URL:-http://127.0.0.1:8080/}"
+
+volumes:
+  jenkins_home:

@@ -1,0 +1,9 @@
+---
+# Ansible Galaxy requirements — omit collection versions so `ansible-galaxy collection install -r requirements.yml`
+# installs the newest releases compatible with your ansible-core at install time.
+collections:
+  - name: community.general
+  - name: ansible.posix
+  - name: community.docker
+
+roles: []

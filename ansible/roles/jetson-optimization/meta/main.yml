@@ -1,0 +1,20 @@
+---
+galaxy_info:
+  role_name: jetson-optimization
+  author: Sentience Robotics
+  description: NVIDIA Jetson AGX Orin performance optimization and power management
+  company: Sentience Robotics
+  license: GPL-3.0-only
+  min_ansible_version: 2.9
+  platforms:
+    - name: Ubuntu
+      versions:
+        - "22.04"
+  galaxy_tags:
+    - jetson
+    - nvidia
+    - performance
+    - optimization
+    - power-management
+
+dependencies: [] 

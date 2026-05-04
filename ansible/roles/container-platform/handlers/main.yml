@@ -1,0 +1,8 @@
+---
+# Container Platform Handlers
+
+- name: restart docker
+  systemd:
+    name: docker
+    state: restarted
+  become: true 

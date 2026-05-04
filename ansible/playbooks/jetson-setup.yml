@@ -1,0 +1,69 @@
+---
+- name: NVIDIA Jetson AGX Orin Complete Setup
+  hosts: jetson_devices
+  become: true
+  gather_facts: true
+  
+  pre_tasks:
+    - name: Gather minimal system facts
+      setup:
+        gather_subset: 
+          - 'hardware'
+          - 'network'
+          - 'virtual'
+      tags: always
+      
+    - name: Display setup information
+      debug:
+        msg:
+          - "🚀 Setting up Jetson AGX Orin: {{ inventory_hostname }}"
+          - "📍 Target: {{ ansible_host }}"
+          - "💻 Architecture: {{ ansible_architecture }}"
+          - "🐧 OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "⚡ Starting optimized setup sequence..."
+      tags: always
+
+  roles:
+    # Phase 1: Performance Optimization (First Priority!)
+    - role: jetson-optimization
+      tags: [jetson, performance, optimization]
+      
+    # Phase 2: System Foundation
+    - role: system-foundation  
+      tags: [system, foundation, updates]
+      
+    # Phase 3: Network & Connectivity
+    - role: network-configuration
+      tags: [network, wifi, connectivity]
+      
+    # Phase 4: Security Setup
+    - role: security-hardening
+      tags: [security, ssh, access]
+      
+    # Phase 5: Container Platform
+    - role: container-platform
+      tags: [docker, containers, nvidia-runtime]
+      
+    # Phase 6: Isaac ROS Platform (Optional)
+    - role: isaac-ros-platform
+      tags: [isaac-ros, robotics, workspace]
+      when: setup_isaac_ros | default(false)
+      
+    # Phase 7: User Environment
+    - role: user-environment
+      tags: [user, shell, development]
+
+  post_tasks:
+    - name: Setup completion summary
+      debug:
+        msg:
+          - "✅ Jetson AGX Orin setup completed successfully!"
+          - "⚡ Performance: Optimized (jetson_clocks + MAXN)"
+          - "🔧 System: Updated and configured"
+          - "🌐 Network: {{ 'Wi-Fi configured' if (lookup('env', 'WIFI_SSID') != '' and lookup('env', 'WIFI_PASSWORD') != '') else 'Network ready' }}"
+          - "🔐 Security: SSH and access configured"
+          - "🐳 Containers: Docker + NVIDIA runtime ready"
+          - "🤖 Isaac ROS: {{ 'Platform ready' if setup_isaac_ros | default(false) else 'Skipped (optional)' }}"
+          - "👤 User Environment: Shell and tools configured"
+          - "🎯 System ready for robotics development!"
+      tags: always 

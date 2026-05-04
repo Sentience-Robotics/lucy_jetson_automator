@@ -1,0 +1,16 @@
+---
+# Security Hardening defaults
+
+# SSH configuration
+ssh_config:
+  public_key_path: "{{ lookup('env', 'SSH_PUBLIC_KEY_PATH') }}"
+  enable_key_deployment: "{{ lookup('env', 'SSH_PUBLIC_KEY_PATH') != '' }}"
+
+# SSH security settings
+ssh_security:
+  disable_root_login: false  # Keep false for Jetson compatibility
+  disable_password_auth: false  # Keep flexible for initial setup
+  port: 22
+  
+# Display settings
+display_security_info: true 

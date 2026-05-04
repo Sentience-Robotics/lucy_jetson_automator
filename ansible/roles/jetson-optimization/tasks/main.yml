@@ -1,0 +1,214 @@
+---
+# NVIDIA Jetson AGX Orin Performance Optimization Tasks
+
+- name: Display optimization information
+  debug:
+    msg:
+      - "Starting Jetson AGX Orin Performance Optimization"
+      - "Target: {{ inventory_hostname }} ({{ ansible_host }})"
+      - "Enabling maximum performance settings"
+  when: display_optimization_info | default(true)
+  tags: [jetson, performance]
+
+- name: Check if jetson_clocks utility exists
+  stat:
+    path: /usr/bin/jetson_clocks
+  register: jetson_clocks_binary
+  tags: [jetson, performance]
+
+- name: Check if nvpmodel utility exists
+  stat:
+    path: /usr/sbin/nvpmodel
+  register: nvpmodel_binary  
+  tags: [jetson, performance]
+
+- name: Validate Jetson utilities availability
+  fail:
+    msg: "Required Jetson utilities not found. Ensure JetPack is properly installed."
+  when: not jetson_clocks_binary.stat.exists or not nvpmodel_binary.stat.exists
+  tags: [jetson, performance]
+
+- name: Configure Jetson performance settings
+  block:
+    - name: Set Jetson clocks to maximum performance
+      command: /usr/bin/jetson_clocks
+      become: true
+      register: jetson_clocks_result
+      changed_when: jetson_clocks_result.rc == 0
+      retries: "{{ optimization_retry_count }}"
+      delay: "{{ optimization_retry_delay }}"
+      until: jetson_clocks_result.rc == 0
+      when: jetson_performance.enable_jetson_clocks | default(true)
+      tags: [jetson, performance, clocks]
+
+    - name: Display jetson_clocks result
+      debug:
+        msg: "Jetson clocks set to maximum performance"
+      when: 
+        - jetson_performance.enable_jetson_clocks | default(true)
+        - jetson_clocks_result is succeeded
+      tags: [jetson, performance]
+
+    - name: Set power mode to maximum (MAXN)
+      command: /usr/sbin/nvpmodel -m 0
+      become: true
+      register: nvpmodel_result
+      changed_when: nvpmodel_result.rc == 0
+      retries: "{{ optimization_retry_count }}"
+      delay: "{{ optimization_retry_delay }}"
+      until: nvpmodel_result.rc == 0
+      when: jetson_performance.enable_max_power_mode | default(true)
+      tags: [jetson, performance, power]
+
+    - name: Display power mode result
+      debug:
+        msg: "Power mode set to MAXN (maximum performance)"
+      when:
+        - jetson_performance.enable_max_power_mode | default(true)
+        - nvpmodel_result is succeeded
+      tags: [jetson, performance]
+
+- name: Verify current power mode configuration
+  block:
+    - name: Check current power mode
+      command: /usr/sbin/nvpmodel -q
+      register: power_mode_status
+      changed_when: false
+      become: true
+      tags: [jetson, performance, verification]
+
+    - name: Display current power mode
+      debug:
+        msg: 
+          - "Current Jetson Power Configuration:"
+          - "{{ power_mode_status.stdout_lines }}"
+      when: power_mode_status.stdout_lines is defined
+      tags: [jetson, performance]
+
+- name: Configure CPU governor (if supported)
+  block:
+    - name: Check available CPU governors
+      shell: cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_available_governors | head -1
+      register: available_governors
+      changed_when: false
+      failed_when: false
+      tags: [jetson, performance, cpu]
+
+    - name: Set CPU governor to performance
+      shell: |
+        for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+          echo "{{ jetson_performance.cpu_governor }}" | sudo tee $cpu
+        done
+      register: cpu_governor_result
+      changed_when: cpu_governor_result.rc == 0
+      when: 
+        - available_governors.rc == 0
+        - jetson_performance.cpu_governor in available_governors.stdout
+      failed_when: false
+      tags: [jetson, performance, cpu]
+
+    - name: Display CPU governor result
+      debug:
+        msg: "CPU governor set to {{ jetson_performance.cpu_governor }}"
+      when: cpu_governor_result is succeeded
+      tags: [jetson, performance]
+
+- name: Configure Ethernet latency optimization
+  block:
+    - name: Check apt cache status before installing tools
+      command: apt list --installed ethtool net-tools
+      register: ethernet_tools_check
+      changed_when: false
+      failed_when: false
+      become: true
+      tags: [jetson, performance, ethernet]
+
+    - name: Install Ethernet tools for latency optimization
+      apt:
+        name:
+          - ethtool
+          - net-tools
+        state: present
+        update_cache: false  # Cache already updated in system-foundation
+      become: true
+      when: "'ethtool' not in ethernet_tools_check.stdout or 'net-tools' not in ethernet_tools_check.stdout"
+      register: ethernet_tools_install
+      failed_when: false  # Don't fail on apt conflicts
+      tags: [jetson, performance, ethernet]
+
+    - name: Display tool installation result
+      debug:
+        msg: "{{ 'Ethernet tools already installed' if ethernet_tools_install is skipped else ('Ethernet tools installed' if ethernet_tools_install is succeeded else 'Tool installation had issues - continuing with existing tools') }}"
+      tags: [jetson, performance, ethernet]
+
+    - name: Check if ethernet interface exists
+      shell: ip link show {{ ethernet_optimization.interface_name }}
+      register: ethernet_interface_check
+      changed_when: false
+      failed_when: false
+      tags: [jetson, performance, ethernet]
+
+    - name: Configure ethernet latency reduction
+      block:
+        - name: Bring down ethernet interface temporarily
+          shell: ifconfig {{ ethernet_optimization.interface_name }} down
+          become: true
+          register: interface_down
+          tags: [jetson, performance, ethernet]
+
+        - name: Tune rx-usecs parameter for reduced latency
+          shell: ethtool -C {{ ethernet_optimization.interface_name }} rx-usecs {{ ethernet_optimization.rx_usecs_value }}
+          become: true
+          register: ethtool_config
+          tags: [jetson, performance, ethernet]
+
+        - name: Bring up ethernet interface
+          shell: ifconfig {{ ethernet_optimization.interface_name }} up
+          become: true
+          register: interface_up
+          tags: [jetson, performance, ethernet]
+
+        - name: Verify rx-usecs configuration
+          shell: ethtool -c {{ ethernet_optimization.interface_name }} | grep rx-usecs
+          register: ethtool_verify
+          changed_when: false
+          tags: [jetson, performance, ethernet]
+
+        - name: Display ethernet optimization result
+          debug:
+            msg: 
+              - "Ethernet latency optimization applied"
+              - "Interface: {{ ethernet_optimization.interface_name }}"
+              - "rx-usecs: {{ ethernet_optimization.rx_usecs_value }}"
+              - "Current setting: {{ ethtool_verify.stdout }}"
+          tags: [jetson, performance]
+
+      when: 
+        - ethernet_interface_check.rc == 0
+        - ethernet_optimization.enable_latency_reduction | default(true)
+        - "'ethtool' in ethernet_tools_check.stdout or ethernet_tools_install is succeeded"
+      rescue:
+        - name: Display ethernet optimization warning
+          debug:
+            msg: "Ethernet latency optimization failed - interface may be in use or not support tuning"
+          tags: [jetson, performance]
+
+    - name: Display ethernet optimization status
+      debug:
+        msg: "Ethernet interface {{ ethernet_optimization.interface_name }} not found - skipping latency optimization"
+      when: ethernet_interface_check.rc != 0
+      tags: [jetson, performance]
+
+  when: ethernet_optimization.enable_latency_reduction | default(true)
+  tags: [jetson, performance, ethernet]
+
+- name: Performance optimization summary
+  debug:
+    msg:
+      - "Jetson AGX Orin Performance Optimization Complete!"
+      - "Jetson clocks: {{ 'Enabled' if jetson_performance.enable_jetson_clocks else 'Disabled' }}"
+      - "Power mode: {{ 'MAXN (Maximum)' if jetson_performance.enable_max_power_mode else 'Default' }}"
+      - "CPU governor: {{ jetson_performance.cpu_governor if available_governors is defined and available_governors.rc == 0 else 'Not configured' }}"
+      - "Ethernet latency: {{ 'Optimized (rx-usecs: ' + ethernet_optimization.rx_usecs_value|string + ')' if ethernet_optimization.enable_latency_reduction else 'Not configured' }}"
+      - "System optimized for maximum performance"
+  tags: [jetson, performance] 

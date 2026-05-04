@@ -1,0 +1,8 @@
+---
+galaxy_info:
+  role_name: vps-bootstrap
+  author: Sentience Robotics
+  description: Docker, firewall, and Jenkins Compose on VPS controller host
+  license: GPL-3.0-only
+
+dependencies: []

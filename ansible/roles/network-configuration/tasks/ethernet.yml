@@ -1,0 +1,67 @@
+---
+# Ethernet Configuration Tasks
+
+- name: Check ethernet interface status
+  shell: ip link show {{ ethernet_config.interface_name }}
+  register: ethernet_interface_status
+  changed_when: false
+  failed_when: false
+  tags: [network, ethernet]
+
+- name: Display ethernet interface information
+  debug:
+    msg:
+      - "Ethernet Interface: {{ ethernet_config.interface_name }}"
+      - "Status: {{ 'Found' if ethernet_interface_status.rc == 0 else 'Not found' }}"
+  tags: [network, ethernet]
+
+- name: Configure ethernet interface
+  block:
+    - name: Ensure ethernet interface is up
+      shell: ip link set {{ ethernet_config.interface_name }} up
+      become: true
+      register: ethernet_up_result
+      changed_when: ethernet_up_result.rc == 0
+      tags: [network, ethernet]
+
+    - name: Check ethernet connection status
+      shell: |
+        if ip addr show {{ ethernet_config.interface_name }} | grep -q "inet "; then
+          echo "connected"
+        else
+          echo "disconnected"
+        fi
+      register: ethernet_connection_status
+      changed_when: false
+      tags: [network, ethernet]
+
+    - name: Get ethernet IP address if connected
+      shell: ip addr show {{ ethernet_config.interface_name }} | grep 'inet ' | awk '{print $2}' | cut -d/ -f1
+      register: ethernet_ip
+      changed_when: false
+      when: ethernet_connection_status.stdout == "connected"
+      tags: [network, ethernet]
+
+    - name: Display ethernet connection information
+      debug:
+        msg:
+          - "Ethernet Interface: {{ ethernet_config.interface_name }}"
+          - "Connection: {{ ethernet_connection_status.stdout }}"
+          - "IP Address: {{ ethernet_ip.stdout if ethernet_ip.stdout is defined and ethernet_ip.stdout != '' else 'Not assigned' }}"
+      tags: [network, ethernet]
+
+    - name: Create ethernet monitoring facts
+      set_fact:
+        ethernet_status:
+          interface: "{{ ethernet_config.interface_name }}"
+          connected: "{{ ethernet_connection_status.stdout == 'connected' }}"
+          ip_address: "{{ ethernet_ip.stdout if ethernet_ip.stdout is defined else '' }}"
+      tags: [network, ethernet]
+
+  when: ethernet_interface_status.rc == 0
+
+- name: Handle missing ethernet interface
+  debug:
+    msg: "Ethernet interface {{ ethernet_config.interface_name }} not found - skipping ethernet configuration"
+  when: ethernet_interface_status.rc != 0
+  tags: [network, ethernet] 
